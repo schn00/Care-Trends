@@ -1664,9 +1664,9 @@ window.Theme=(function(){
 <div class="toast" id="toast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg><span id="toastMsg">Saved</span></div>
 
 <script>
-const KEYS={meds:"caretrends:meds",medlog:"caretrends:medlog",daily:"caretrends:daily",prefs:"caretrends:prefs",nutrition:"caretrends:nutrition",feeds:"caretrends:feeds",dailynotes:"caretrends:dailynotes",visits:"caretrends:visits"};
-const ALL_KEYS=[KEYS.meds,KEYS.medlog,KEYS.daily,KEYS.prefs,KEYS.nutrition,KEYS.feeds,KEYS.dailynotes,KEYS.visits];
-/* array collections are merged by id; these two are handled specially */
+const KEYS={meds:"caretrends:meds",medlog:"caretrends:medlog",daily:"caretrends:daily",prefs:"caretrends:prefs",nutrition:"caretrends:nutrition",feeds:"caretrends:feeds",dailynotes:"caretrends:dailynotes",visits:"caretrends:visits",meta:"caretrends:syncmeta"};
+const ALL_KEYS=[KEYS.meds,KEYS.medlog,KEYS.daily,KEYS.prefs,KEYS.nutrition,KEYS.feeds,KEYS.dailynotes,KEYS.visits,KEYS.meta];
+/* array collections are merged by id; prefs, dailynotes and meta are handled specially */
 const ARRAY_KEYS=[KEYS.meds,KEYS.medlog,KEYS.daily,KEYS.nutrition,KEYS.feeds,KEYS.visits];
 
 /* ---------- Local cache: localStorage, with in-memory fallback ---------- */
@@ -1675,19 +1675,90 @@ const hasLS=(()=>{try{const k="__ct_probe__";localStorage.setItem(k,"1");localSt
 function lsGet(k){ if(hasLS){const r=localStorage.getItem(k);return r==null?null:JSON.parse(r);} return mem[k]!==undefined?mem[k]:null; }
 function lsSet(k,v){ if(hasLS){localStorage.setItem(k,JSON.stringify(v));} else {mem[k]=v;} }
 
+/* =====================================================================
+   Change tracking (the thing that makes multi-device merges honest)
+
+   Every entry gets a hidden `_m` — the wall-clock time this device last
+   changed it. Deletions leave a tombstone in KEYS.meta so the other device
+   removes the entry instead of resurrecting it on the next union. Both
+   travel with the data file, so any device can work out, per entry, which
+   side is newer and whether it was deleted after its last edit.
+   ===================================================================== */
+const TOMB_TTL=120*24*3600*1000;         // tombstones expire after ~4 months
+const LEGACY_M=1;                        // stamp for data written before this existed
+
+function metaGet(){ const m=lsGet(KEYS.meta)||{}; m.del=m.del||{}; m.notes=m.notes||{}; m.notesDel=m.notesDel||{}; return m; }
+function metaSet(m){ lsSet(KEYS.meta,m); }
+function metaOf(o){ const m=(o&&o[KEYS.meta])||{}; return {del:m.del||{},notes:m.notes||{},notesDel:m.notesDel||{}}; }
+function gcMeta(m,now){
+  const cut=(now||Date.now())-TOMB_TTL;
+  Object.keys(m.del||{}).forEach(k=>{ Object.keys(m.del[k]).forEach(id=>{ if(m.del[k][id]<cut) delete m.del[k][id]; }); if(!Object.keys(m.del[k]).length) delete m.del[k]; });
+  Object.keys(m.notesDel||{}).forEach(dk=>{ if(m.notesDel[dk]<cut) delete m.notesDel[dk]; });
+  return m;
+}
+/* content fingerprint of one entry, ignoring the bookkeeping field */
+function entrySig(e){
+  if(!e||typeof e!=="object") return JSON.stringify(e);
+  const o={}; Object.keys(e).filter(k=>k!=="_m").sort().forEach(k=>o[k]=e[k]);
+  return JSON.stringify(o);
+}
+/* called on every app write, just before the value hits localStorage */
+function trackChanges(k,v){
+  const now=Date.now();
+  if(ARRAY_KEYS.indexOf(k)>=0 && Array.isArray(v)){
+    const prev=lsGet(k), pm=new Map();
+    (Array.isArray(prev)?prev:[]).forEach(e=>{ if(e&&e.id!=null) pm.set(String(e.id),e); });
+    const m=metaGet(), del=m.del[k]||(m.del[k]={}), seen=new Set();
+    v.forEach(e=>{
+      if(!e||typeof e!=="object"||e.id==null) return;
+      const id=String(e.id), p=pm.get(id); seen.add(id);
+      if(!p) e._m=now;
+      else if(entrySig(p)!==entrySig(e)) e._m=now;
+      else if(!e._m) e._m=p._m||LEGACY_M;
+      if(del[id]) delete del[id];              // re-created -> tombstone is void
+    });
+    pm.forEach((p,id)=>{ if(!seen.has(id)) del[id]=now; });
+    metaSet(gcMeta(m,now));
+  } else if(k===KEYS.dailynotes && v && typeof v==="object"){
+    const prev=lsGet(k)||{}, m=metaGet();
+    Object.keys(v).forEach(dk=>{
+      if(JSON.stringify(prev[dk])!==JSON.stringify(v[dk])){ m.notes[dk]=now; delete m.notesDel[dk]; }
+      else if(!m.notes[dk]) m.notes[dk]=LEGACY_M;
+    });
+    Object.keys(prev).forEach(dk=>{ if(!(dk in v)){ m.notesDel[dk]=now; delete m.notes[dk]; } });
+    metaSet(gcMeta(m,now));
+  }
+}
+/* data saved before change tracking existed gets the oldest possible stamp,
+   so a genuine edit on any device always beats it */
+function stampLegacy(){
+  ARRAY_KEYS.forEach(k=>{
+    const a=lsGet(k); if(!Array.isArray(a)) return;
+    let touched=false;
+    a.forEach(e=>{ if(e&&typeof e==="object"&&e.id!=null&&!e._m){ e._m=LEGACY_M; touched=true; } });
+    if(touched) lsSet(k,a);
+  });
+  const dn=lsGet(KEYS.dailynotes), m=metaGet(); let t=false;
+  if(dn&&typeof dn==="object") Object.keys(dn).forEach(dk=>{ if(!m.notes[dk]){ m.notes[dk]=LEGACY_M; t=true; } });
+  if(t) metaSet(m);
+}
+
 /* storeGet/storeSet keep their original signatures so the rest of the app is untouched.
    Reads are instant from local cache; writes save locally now and queue a background Drive sync. */
 async function storeGet(k){ try{return lsGet(k);}catch(e){return null;} }
-async function storeSet(k,v){ try{lsSet(k,v);}catch(e){console.warn(e);} if(!DriveSync.suspended) DriveSync.queuePush(); }
+async function storeSet(k,v){ try{trackChanges(k,v); lsSet(k,v);}catch(e){console.warn(e);} if(!DriveSync.suspended) DriveSync.queuePush(); }
 
 /* =====================================================================
    Google Drive sync (drive.file scope)
    - Each caregiver connects a Google account; data lives in THAT account's
      Drive in a single file the app creates. Nothing is sent to any server.
    - Merge-on-save: before writing, the app re-reads the remote file and
-     unions entries by id, so two caregivers adding different entries never
-     erase each other. (Editing the exact same entry at the same second is
-     still last-write-wins on that one entry.)
+     reconciles entry by entry using `_m` timestamps and tombstones, so two
+     caregivers never erase each other and a delete on one device is not
+     undone by the other.
+   - The file id is remembered locally and the file is tagged with an
+     appProperty, so a slow Drive search index can no longer cause a device
+     to quietly start a second copy of the data.
    ===================================================================== */
 const DriveSync=(function(){
   /* ▼▼▼  PASTE YOUR GOOGLE OAUTH CLIENT ID BELOW (see the setup guide)  ▼▼▼ */
@@ -1696,15 +1767,23 @@ const DriveSync=(function(){
 
   const SCOPE="https://www.googleapis.com/auth/drive.file";
   const FILE_NAME="care-trends-data.json";
+  const APP_TAG="caretrends";
   const ENABLED_FLAG="caretrends:sync:enabled";
-  const POLL_MS=60000, PUSH_DEBOUNCE=2500;
+  const FILE_FLAG="caretrends:sync:fileid";
+  const POLL_MS=60000, PUSH_DEBOUNCE=2500, SWEEP_MS=600000;
+  const SILENT_TIMEOUT=20000, INTERACTIVE_TIMEOUT=120000;
 
-  let tokenClient=null, accessToken=null, tokenExpiry=0;
-  let fileId=null, connected=false, syncing=false, pushTimer=null, pollTimer=null;
+  let tokenClient=null, accessToken=null, tokenExpiry=0, tokenReq=null, cbHandler=null;
+  let fileId=null, extras=[], lastSweep=0;
+  let connected=false, syncing=false, pushTimer=null, pollTimer=null;
   let pendingRerender=false, lastState="";
   const S={suspended:false};
 
   const isConfigured=()=>CLIENT_ID && !/^PASTE_/.test(CLIENT_ID);
+  const isStandalone=()=>{
+    try{ return window.navigator.standalone===true || (window.matchMedia && window.matchMedia("(display-mode: standalone)").matches); }
+    catch(e){ return false; }
+  };
 
   /* ---- UI ---- */
   const $btn=()=>document.getElementById("syncBtn");
@@ -1732,9 +1811,16 @@ const DriveSync=(function(){
   }
   function updateMenuInfo(){
     const el=document.getElementById("syncMenuInfo"); if(!el)return;
-    el.innerHTML=connected
+    const base=connected
       ? "This device is syncing to Google Drive. Your data is stored in the connected Google account &mdash; nothing is sent to the app's creator."
       : "Not connected on this device.";
+    /* iOS gives a home-screen install its own private cookie and storage jar,
+       so it is a separate device as far as Google is concerned. Saying so
+       stops the repeated sign-in looking like a fault. */
+    const ios=isStandalone()
+      ? "<br><br>This home-screen app signs in separately from Safari — that's an iOS rule, not a bug. Each iPhone, iPad and browser needs its own one-time connect."
+      : "";
+    el.innerHTML=base+ios;
   }
   function toggleMenu(force){
     const m=$menu(); if(!m)return;
@@ -1745,50 +1831,85 @@ const DriveSync=(function(){
     const w=$wrap(); if(w && !w.contains(e.target)) toggleMenu(false);
   });
 
-  /* ---- token handling (short-lived access token; no server, no refresh token) ---- */
+  /* ---- token handling ------------------------------------------------
+     Google hands out a one-hour access token and no refresh token, so the
+     app re-asks constantly. Two rules keep that survivable:
+       1. every request has a timeout, so a popup that never reports back
+          can't leave the button spinning forever;
+       2. the interactive request is fired synchronously from the click,
+          before any await, or Safari drops the user-gesture flag and
+          silently blocks the popup.
+     -------------------------------------------------------------------- */
   function ensureClient(){
     if(tokenClient) return true;
     if(!(window.google && google.accounts && google.accounts.oauth2)) return false;
-    tokenClient=google.accounts.oauth2.initTokenClient({client_id:CLIENT_ID,scope:SCOPE,callback:()=>{}});
+    tokenClient=google.accounts.oauth2.initTokenClient({
+      client_id:CLIENT_ID, scope:SCOPE,
+      callback:(resp)=>{ if(cbHandler) cbHandler(null,resp); },
+      error_callback:(err)=>{ if(cbHandler) cbHandler(err||{error:"popup_failed"}); }
+    });
     return true;
   }
-  function getToken(silent){
-    return new Promise((resolve,reject)=>{
-      if(accessToken && Date.now()<tokenExpiry-60000) return resolve(accessToken);
-      if(!ensureClient()) return reject(new Error("gis-not-loaded"));
-      tokenClient.callback=(resp)=>{
-        if(resp && resp.error) return reject(resp);
+  const hasToken=()=>!!accessToken && Date.now()<tokenExpiry-60000;
+  function requestToken(silent){
+    if(hasToken()) return Promise.resolve(accessToken);
+    if(tokenReq) return tokenReq;
+    if(!ensureClient()) return Promise.reject(new Error("gis-not-loaded"));
+    tokenReq=new Promise((resolve,reject)=>{
+      let done=false;
+      const finish=(fn,arg)=>{ if(done)return; done=true; clearTimeout(tm); cbHandler=null; tokenReq=null; fn(arg); };
+      const tm=setTimeout(()=>finish(reject,{error:"timeout"}), silent?SILENT_TIMEOUT:INTERACTIVE_TIMEOUT);
+      cbHandler=(err,resp)=>{
+        if(err) return finish(reject,err);
+        if(!resp || resp.error || !resp.access_token) return finish(reject,resp||{error:"no-response"});
         accessToken=resp.access_token;
         tokenExpiry=Date.now()+((resp.expires_in||3600)*1000);
-        resolve(accessToken);
+        finish(resolve,accessToken);
       };
       try{ tokenClient.requestAccessToken({prompt: silent?"none":""}); }
-      catch(e){ reject(e); }
+      catch(e){ finish(reject,e); }
     });
+    return tokenReq;
   }
+  const needsLogin=(e)=>!!e && (e.status===401 || e.error==="interaction_required" || e.error==="login_required"
+                                || e.error==="timeout" || e.error==="popup_failed" || e.message==="gis-not-loaded");
 
   /* ---- Drive REST helpers ---- */
   async function api(url,opts){
-    const t=await getToken(true);
+    const t=hasToken()?accessToken:await requestToken(true);
     const r=await fetch(url,Object.assign({},opts,{headers:Object.assign({Authorization:"Bearer "+t},(opts&&opts.headers)||{})}));
-    if(r.status===401){ accessToken=null; throw {status:401}; }
+    if(r.status===401){ accessToken=null; tokenExpiry=0; throw {status:401}; }
     if(!r.ok) throw {status:r.status,body:await r.text().catch(()=>"")};
     return r;
   }
-  async function findFile(){
-    const q=encodeURIComponent("name='"+FILE_NAME+"' and trashed=false");
-    const r=await api("https://www.googleapis.com/drive/v3/files?spaces=drive&q="+q+"&fields=files(id,modifiedTime)&pageSize=1");
+  function saveFileId(){ try{ lsSet(FILE_FLAG,fileId||null); }catch(e){} }
+  async function listFiles(){
+    const q=encodeURIComponent("(appProperties has {key='"+APP_TAG+"' and value='1'} or name='"+FILE_NAME+"') and trashed=false");
+    const r=await api("https://www.googleapis.com/drive/v3/files?spaces=drive&q="+q+
+                      "&fields=files(id,name,createdTime)&orderBy=createdTime&pageSize=25");
     const j=await r.json();
-    fileId=(j.files&&j.files[0]&&j.files[0].id)||null;
-    return fileId;
+    return (j.files||[]).filter(f=>f&&f.id);
   }
-  async function readFile(){
-    if(!fileId) return null;
-    const r=await api("https://www.googleapis.com/drive/v3/files/"+fileId+"?alt=media");
+  /* Pick the canonical file and note any duplicates. Duplicates happen when a
+     second device connects inside Drive's search-index lag and creates its own
+     copy; the oldest file wins and the rest are merged in and then trashed. */
+  async function resolveFile(force){
+    if(!force && fileId && (Date.now()-lastSweep)<SWEEP_MS) return;
+    const files=await listFiles();
+    lastSweep=Date.now();
+    if(!files.length){ if(!force) return; fileId=null; extras=[]; saveFileId(); return; }
+    fileId=files[0].id;
+    extras=files.slice(1).map(f=>f.id);
+    saveFileId();
+  }
+  async function readFile(id){
+    if(!id) return null;
+    const r=await api("https://www.googleapis.com/drive/v3/files/"+id+"?alt=media");
     try{return await r.json();}catch(e){return null;}
   }
   async function writeFile(obj){
-    const meta={name:FILE_NAME,mimeType:"application/json"};
+    const meta={name:FILE_NAME,mimeType:"application/json",appProperties:{}};
+    meta.appProperties[APP_TAG]="1";
     const body=JSON.stringify(obj);
     const boundary="ct"+Date.now();
     const multipart=
@@ -1799,33 +1920,111 @@ const DriveSync=(function(){
       ? "https://www.googleapis.com/upload/drive/v3/files/"+fileId+"?uploadType=multipart&fields=id"
       : "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id";
     const r=await api(url,{method,headers:{"Content-Type":"multipart/related; boundary="+boundary},body:multipart});
-    const j=await r.json(); if(j&&j.id) fileId=j.id;
+    const j=await r.json();
+    if(j&&j.id){ fileId=j.id; saveFileId(); }
+  }
+  async function trashExtras(){
+    if(!extras.length) return;
+    const list=extras.slice(); extras=[];
+    for(const id of list){
+      if(id===fileId) continue;
+      try{
+        await api("https://www.googleapis.com/drive/v3/files/"+id,
+          {method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({trashed:true})});
+      }catch(e){ console.warn("could not trash duplicate",id,e); }
+    }
   }
 
   /* ---- data snapshot + merge ---- */
   function collectLocal(){ const o={}; ALL_KEYS.forEach(k=>o[k]=lsGet(k)); return o; }
   function applyLocal(o){ ALL_KEYS.forEach(k=>{ if(o[k]!==undefined && o[k]!==null) lsSet(k,o[k]); }); }
-  function mergeById(localArr,remoteArr){
-    const map=new Map(); const noId=[];
-    (Array.isArray(remoteArr)?remoteArr:[]).forEach(e=>{ if(e&&e.id!=null)map.set(e.id,e); else noId.push(e); });
-    (Array.isArray(localArr)?localArr:[]).forEach(e=>{ if(e&&e.id!=null)map.set(e.id,e); else noId.push(e); }); // local wins
-    return [...map.values(),...noId];
+
+  function mergeMeta(a,b){
+    const m={del:{},notes:{},notesDel:{}};
+    [a,b].forEach(s=>{
+      if(!s) return;
+      Object.keys(s.del||{}).forEach(k=>{ m.del[k]=m.del[k]||{}; Object.keys(s.del[k]).forEach(id=>{ m.del[k][id]=Math.max(m.del[k][id]||0,s.del[k][id]||0); }); });
+      Object.keys(s.notes||{}).forEach(dk=>{ m.notes[dk]=Math.max(m.notes[dk]||0,s.notes[dk]||0); });
+      Object.keys(s.notesDel||{}).forEach(dk=>{ m.notesDel[dk]=Math.max(m.notesDel[dk]||0,s.notesDel[dk]||0); });
+    });
+    return gcMeta(m,Date.now());
   }
-  function merge(local,remote){
-    const out={};
-    ARRAY_KEYS.forEach(k=>{ out[k]=mergeById(local[k],remote[k]); });
-    out[KEYS.dailynotes]=Object.assign({},remote[KEYS.dailynotes]||{},local[KEYS.dailynotes]||{}); // local wins per-key
-    out[KEYS.prefs]=(local[KEYS.prefs]!=null)?local[KEYS.prefs]:remote[KEYS.prefs]; // local device settings win
+  /* newest `_m` wins per id; b wins exact ties. A tombstone removes the entry
+     unless the surviving copy was edited after the delete. */
+  function mergeArr(key,x,y,meta){
+    const del=(meta.del&&meta.del[key])||{};
+    const map=new Map(), noId=[];
+    const put=(e,winTies)=>{
+      if(!e||typeof e!=="object") return;
+      if(e.id==null){ noId.push(e); return; }
+      const id=String(e.id), cur=map.get(id);
+      if(!cur){ map.set(id,e); return; }
+      const ce=cur._m||0, ee=e._m||0;
+      if(winTies ? ee>=ce : ee>ce) map.set(id,e);
+    };
+    (Array.isArray(x)?x:[]).forEach(e=>put(e,false));
+    (Array.isArray(y)?y:[]).forEach(e=>put(e,true));
+    Object.keys(del).forEach(id=>{ const e=map.get(id); if(e && (e._m||0)<=del[id]) map.delete(id); });
+    let out=[...map.values(),...noId];
+    if(key===KEYS.medlog) out=dedupeLog(out);
     return out;
   }
-  const sig=o=>{ // order-independent signature for change detection
-    try{
-      const parts=[];
-      ARRAY_KEYS.forEach(k=>{parts.push(k+":"+(Array.isArray(o[k])?o[k].map(e=>e&&e.id).sort().join(","):""));});
-      parts.push("notes:"+Object.keys(o[KEYS.dailynotes]||{}).sort().join(","));
-      return parts.join("|")+"|"+JSON.stringify(o[KEYS.meds]||[]).length; // rough content check for arrays
-    }catch(e){return Math.random().toString();}
-  };
+  /* two devices can each create their own log entry for the same day+med
+     before they ever see each other; fold those together rather than
+     showing the day twice */
+  function dedupeLog(arr){
+    const by=new Map(), keep=new Set(), pass=[];
+    arr.forEach(e=>{
+      if(!e||e.date==null||e.medId==null){ pass.push(e); return; }
+      const k=e.date+"|"+e.medId, c=by.get(k);
+      if(!c){ by.set(k,e); return; }
+      const win=((e._m||0)>=(c._m||0))?e:c, lose=(win===e)?c:e;
+      win.times=[...new Set([].concat(win.times||[],lose.times||[]))].sort();
+      if(!win.notes && lose.notes) win.notes=lose.notes;
+      by.set(k,win);
+    });
+    by.forEach(v=>keep.add(v));
+    return arr.filter(e=>keep.has(e)).concat(pass);
+  }
+  function mergeNotes(A,B,ma,mb,meta){
+    const out={}, keys=new Set([].concat(Object.keys(A||{}),Object.keys(B||{})));
+    keys.forEach(dk=>{
+      const ta=(ma.notes&&ma.notes[dk])||0, tb=(mb.notes&&mb.notes[dk])||0;
+      const td=(meta.notesDel&&meta.notesDel[dk])||0;
+      if(td && td>=Math.max(ta,tb)) return;                 // deleted after its last edit
+      if(dk in (B||{}) && dk in (A||{})) out[dk]=(tb>=ta)?B[dk]:A[dk];
+      else if(dk in (B||{})) out[dk]=B[dk];
+      else out[dk]=A[dk];
+    });
+    return out;
+  }
+  function mergeData(a,b){                                   // b wins ties
+    const ma=metaOf(a), mb=metaOf(b), meta=mergeMeta(ma,mb), out={};
+    ARRAY_KEYS.forEach(k=>{ out[k]=mergeArr(k,a[k],b[k],meta); });
+    out[KEYS.dailynotes]=mergeNotes(a[KEYS.dailynotes]||{},b[KEYS.dailynotes]||{},ma,mb,meta);
+    out[KEYS.prefs]=(b[KEYS.prefs]!=null)?b[KEYS.prefs]:a[KEYS.prefs];   // device settings: local wins
+    out[KEYS.meta]=meta;
+    return out;
+  }
+  /* Real content fingerprint. The old signature only hashed entry ids, so
+     editing an existing entry produced an identical hash and the change was
+     never uploaded. Prefs are deliberately excluded — they are per-device and
+     including them would make two devices overwrite each other forever. */
+  const sortObj=(o)=>Object.keys(o||{}).sort().reduce((a,k)=>{a[k]=(o[k]&&typeof o[k]==="object")?sortObj(o[k]):o[k];return a;},{});
+  function norm(o){
+    if(!o) return "";
+    const parts={};
+    ARRAY_KEYS.forEach(k=>{
+      parts[k]=(Array.isArray(o[k])?o[k]:[]).slice()
+        .sort((a,b)=>String(a&&a.id).localeCompare(String(b&&b.id)))
+        .map(e=>entrySig(e)+"@"+((e&&e._m)||0));
+    });
+    const dn=o[KEYS.dailynotes]||{};
+    parts._notes=Object.keys(dn).sort().map(k=>k+"="+JSON.stringify(dn[k]));
+    const m=metaOf(o);
+    parts._del=JSON.stringify([sortObj(m.del),sortObj(m.notesDel)]);
+    return JSON.stringify(parts);
+  }
 
   function safeToRender(){
     if(document.querySelector(".modal-back.show")) return false;
@@ -1839,44 +2038,72 @@ const DriveSync=(function(){
     finally{ S.suspended=false; }
   }
 
-  /* ---- the one reconcile operation used by push, poll, and manual sync ---- */
-  async function reconcile(interactiveOk){
+  /* ---- the one reconcile operation used by push, poll, and manual sync ----
+     Never prompts. If the silent token is gone it fails to "Reconnect" and
+     waits for a tap, because a popup opened from a background timer is
+     blocked anyway. */
+  async function reconcile(){
     if(!connected || syncing) return;
     syncing=true; setStatus("syncing");
     try{
-      await getToken(true).catch(async e=>{ if(interactiveOk) return getToken(false); throw e; });
-      if(fileId===null) await findFile();
-      const remote=fileId?await readFile():null;
-      const local=collectLocal();
-      if(!remote){                         // nothing in Drive yet -> upload local
-        await writeFile(Object.assign({_app:"care-trends",_updated:Date.now()},local));
-        setStatus("synced"); return;
-      }
-      const merged=merge(local,remote);
-      const localChanged=sig(merged)!==sig(local);
-      const remoteChanged=sig(merged)!==sig(remote);
-      if(localChanged){ applyLocal(merged); }
-      if(remoteChanged){ await writeFile(Object.assign({_app:"care-trends",_updated:Date.now()},merged)); }
-      if(localChanged){
-        if(safeToRender()){ await reloadRender(); pendingRerender=false; }
-        else { pendingRerender=true; }
-      }
+      await runSync(false);
       setStatus("synced");
     }catch(e){
-      console.warn("sync error",e);
-      if(e && (e.status===401 || e.error==="interaction_required" || e.error==="login_required" || e.message==="gis-not-loaded")){
-        setStatus("warn");
-      } else {
-        setStatus(connected?"warn":"connect");
+      if(e && e.status===404){                   // file was deleted in Drive
+        try{ fileId=null; extras=[]; saveFileId(); await runSync(true); setStatus("synced"); return; }
+        catch(e2){ e=e2; }
       }
+      console.warn("sync error",e);
+      setStatus(needsLogin(e) ? "warn" : (connected?"warn":"connect"));
     }finally{ syncing=false; }
+  }
+  async function runSync(forceFind){
+    if(!hasToken()) await requestToken(true);
+    await resolveFile(forceFind);
+    let remote=fileId?await readFile(fileId):null;
+    for(const id of extras){                     // fold in any duplicate files
+      const d=await readFile(id).catch(()=>null);
+      if(d) remote=remote?mergeData(remote,d):d;
+    }
+    const local=collectLocal();
+    if(!remote){
+      await writeFile(Object.assign({_app:"care-trends",_updated:Date.now()},local));
+      await trashExtras();
+      return;
+    }
+    const merged=mergeData(remote,local);
+    const nl=norm(local), nr=norm(remote), nm=norm(merged);
+    if(nm!==nl) applyLocal(merged);
+    if(nm!==nr) await writeFile(Object.assign({_app:"care-trends",_updated:Date.now()},merged));
+    await trashExtras();
+    if(nm!==nl){
+      if(safeToRender()){ await reloadRender(); pendingRerender=false; }
+      else pendingRerender=true;
+    }
   }
 
   /* ---- public actions ---- */
   function queuePush(){
     if(!connected) return;
     clearTimeout(pushTimer);
-    pushTimer=setTimeout(()=>reconcile(false),PUSH_DEBOUNCE);
+    pushTimer=setTimeout(()=>{ pushTimer=null; reconcile(); },PUSH_DEBOUNCE);
+  }
+  function authFailed(e){
+    console.warn("google auth failed",e);
+    setStatus(connected?"warn":"connect");
+    toast(isStandalone()
+      ? "Sign-in didn't finish. Home-screen apps sign in separately — try again, or use Care Trends in Safari on this device."
+      : "Google sign-in was cancelled or blocked");
+  }
+  /* MUST be called straight from a click handler, with no await before it,
+     or the popup is suppressed */
+  function authAndSync(){
+    setStatus("syncing");
+    requestToken(false).then(()=>{
+      connected=true; lsSet(ENABLED_FLAG,true);
+      startPoll();
+      return reconcile();
+    }).catch(authFailed);
   }
   async function connect(){
     if(!isConfigured()) return;
@@ -1884,41 +2111,35 @@ const DriveSync=(function(){
       "Your data is stored in your own Google Drive. Care Trends' creator never receives or can access it. The app only touches the data file it creates — nothing else in your Drive.",
       "Connect Google Drive","Continue");
     if(!ok){ setStatus("connect"); return; }
-    try{
-      setStatus("syncing");
-      await getToken(false);              // interactive: account picker + consent
-      connected=true; lsSet(ENABLED_FLAG,true);
-      fileId=null;
-      await reconcile(true);
-      startPoll();
-    }catch(e){
-      console.warn("connect failed",e);
-      connected=false; lsSet(ENABLED_FLAG,false); setStatus("connect");
-      toast("Google connection cancelled");
-    }
+    fileId=lsGet(FILE_FLAG)||null; extras=[]; lastSweep=0;
+    authAndSync();
   }
   function disconnect(){
     toggleMenu(false);
     if(accessToken && window.google && google.accounts && google.accounts.oauth2){
       try{ google.accounts.oauth2.revoke(accessToken,()=>{}); }catch(e){}
     }
-    accessToken=null; tokenExpiry=0; connected=false; fileId=null;
-    lsSet(ENABLED_FLAG,false); stopPoll(); setStatus("connect");
+    accessToken=null; tokenExpiry=0; connected=false; fileId=null; extras=[]; lastSweep=0;
+    lsSet(ENABLED_FLAG,false); saveFileId(); stopPoll(); setStatus("connect");
     toast("Disconnected on this device. Your data stays in your Google Drive.");
   }
-  function syncNow(){ toggleMenu(false); reconcile(true); }
+  function syncNow(){
+    toggleMenu(false);
+    if(hasToken()) reconcile(); else authAndSync();     // interactive path stays inside the gesture
+  }
   function onBtn(){
     if(!isConfigured()) return;
+    if(lastState==="warn") return authAndSync();
     if(lastState==="connect") return connect();
-    if(lastState==="warn") return reconcile(true);
-    if(connected) return toggleMenu();     // synced/syncing -> menu
+    if(connected) return toggleMenu();
     connect();
   }
-  function startPoll(){ stopPoll(); pollTimer=setInterval(()=>{ if(document.visibilityState==="visible") reconcile(false); },POLL_MS); }
+  function startPoll(){ stopPoll(); pollTimer=setInterval(()=>{ if(document.visibilityState==="visible") reconcile(); },POLL_MS); }
   function stopPoll(){ if(pollTimer){clearInterval(pollTimer);pollTimer=null;} }
 
   /* ---- boot: called from init() after local data is on screen ---- */
   async function boot(){
+    stampLegacy();
     if(!isConfigured()){                    // local-only deployment
       $wrap().style.display="none";         // (no cloud UI when no Client ID is set)
       return;
@@ -1926,21 +2147,29 @@ const DriveSync=(function(){
     $wrap().style.display="";
     const wasEnabled=!!lsGet(ENABLED_FLAG);
     if(!wasEnabled){ setStatus("connect"); return; }
-    // previously connected on this device: try a silent reconnect, no popups
     connected=true; setStatus("syncing");
+    fileId=lsGet(FILE_FLAG)||null;          // survives the Drive search-index lag
     const waitGIS=(n)=>new Promise(res=>{ const i=setInterval(()=>{ if(ensureClient()||n--<=0){clearInterval(i);res();} },150); });
     await waitGIS(40);
     try{
-      await getToken(true);                 // silent
-      await reconcile(false);
+      await requestToken(true);             // silent; times out instead of hanging
+      await reconcile();
       startPoll();
     }catch(e){
       setStatus("warn");                    // needs a tap to reconnect (Safari / signed-out / cleared cookies)
     }
   }
-  // flush a pending push when leaving / on refocus catch up
-  window.addEventListener("visibilitychange",()=>{ if(document.visibilityState==="visible"){ if(pendingRerender && safeToRender()){reloadRender();pendingRerender=false;} if(connected) reconcile(false); } });
-  window.addEventListener("beforeunload",()=>{ if(connected && pushTimer){ /* best-effort: browser may not wait for async */ } });
+  /* push anything still sitting in the debounce before the page goes away */
+  function flushNow(){
+    if(connected && pushTimer){ clearTimeout(pushTimer); pushTimer=null; reconcile(); }
+  }
+  document.addEventListener("visibilitychange",()=>{
+    if(document.visibilityState==="visible"){
+      if(pendingRerender && safeToRender()){ reloadRender(); pendingRerender=false; }
+      if(connected) reconcile();
+    } else flushNow();
+  });
+  window.addEventListener("pagehide",flushNow);
 
   return {boot,connect,disconnect,syncNow,onBtn,queuePush,get suspended(){return S.suspended;},set suspended(v){S.suspended=v;}};
 })();
