@@ -1102,6 +1102,7 @@ window.Theme=(function(){
       <div class="sync-menu" id="syncMenu">
         <div class="si" id="syncMenuInfo"></div>
         <div class="msep"></div>
+        <button id="syncReauthBtn" style="display:none" onclick="DriveSync.reauth()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8h1a4 4 0 0 1 0 8h-1"/><path d="M2 8h16v9a4 4 0 0 1-4 4H6a4 4 0 0 1-4-4z"/><line x1="6" y1="1" x2="6" y2="4"/><line x1="10" y1="1" x2="10" y2="4"/><line x1="14" y1="1" x2="14" y2="4"/></svg>Reconnect to Google</button>
         <button onclick="DriveSync.syncNow()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-2.64-6.36"/><polyline points="21 3 21 9 15 9"/></svg>Sync now</button>
         <button class="danger" onclick="DriveSync.disconnect()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18.36 6.64a9 9 0 1 1-12.73 0"/><line x1="12" y1="2" x2="12" y2="12"/></svg>Disconnect this device</button>
       </div>
@@ -1809,6 +1810,8 @@ const DriveSync=(function(){
     else if(state==="warn") render("warn","Reconnect");
     else if(state==="connect") render("connect","Connect Google");
     else render("local","Local only");
+    const m=$menu();
+    if(m && m.classList.contains("open")) updateMenuInfo();   // live-update while open
   }
   function updateMenuInfo(){
     const el=document.getElementById("syncMenuInfo"); if(!el)return;
@@ -1824,6 +1827,8 @@ const DriveSync=(function(){
     const esc=(s)=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
     const err=lastError ? "<br><br><b>Last error:</b> "+esc(lastError) : "";
     el.innerHTML=base+ios+err;
+    const rb=document.getElementById("syncReauthBtn");
+    if(rb) rb.style.display=(needsAuth||authing||lastState==="warn")?"":"none";
   }
   function toggleMenu(force){
     const m=$menu(); if(!m)return;
@@ -2189,17 +2194,16 @@ const DriveSync=(function(){
     if(!hasToken() || needsAuth) return authAndSync();  // interactive path stays inside the gesture
     reconcile().then(()=>{ if(lastError) toast(lastError); });
   }
-  /* Routing is driven by real state, never by the button's current label. The
-     old version keyed off lastState, so once authAndSync flipped the label to
-     "Syncing…" every further tap fell through to the menu and there was no way
-     back to a sign-in prompt. */
+  /* Once the device is linked, the button always opens the menu — including in
+     the Reconnect state, which is exactly when you need to read the error.
+     Retrying moved into the menu as its own item, so the sign-in request still
+     starts from a real click and the popup isn't blocked. */
   function onBtn(){
     if(!isConfigured()) return;
     if(!connected) return connect();          // never linked on this device
-    if(needsAuth || authing) return authAndSync();   // stuck or failed -> fresh popup
-    if(lastState==="warn") return authAndSync();
     return toggleMenu();
   }
+  function reauth(){ toggleMenu(false); authAndSync(); }
   function startPoll(){ stopPoll(); pollTimer=setInterval(()=>{ if(document.visibilityState==="visible") reconcile(); },POLL_MS); }
   function stopPoll(){ if(pollTimer){clearInterval(pollTimer);pollTimer=null;} }
 
@@ -2237,7 +2241,7 @@ const DriveSync=(function(){
   });
   window.addEventListener("pagehide",flushNow);
 
-  return {boot,connect,disconnect,syncNow,onBtn,queuePush,get suspended(){return S.suspended;},set suspended(v){S.suspended=v;}};
+  return {boot,connect,disconnect,syncNow,onBtn,reauth,queuePush,get suspended(){return S.suspended;},set suspended(v){S.suspended=v;}};
 })();
 
 let MEDS=[],MEDLOG=[],DAILY=[],NUTRITION=[],FEEDS=[],VISITS=[];
