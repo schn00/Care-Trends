@@ -1771,11 +1771,12 @@ const DriveSync=(function(){
   const ENABLED_FLAG="caretrends:sync:enabled";
   const FILE_FLAG="caretrends:sync:fileid";
   const POLL_MS=60000, PUSH_DEBOUNCE=2500, SWEEP_MS=600000;
-  const SILENT_TIMEOUT=20000, INTERACTIVE_TIMEOUT=120000;
+  const SILENT_TIMEOUT=20000, INTERACTIVE_TIMEOUT=45000;
 
-  let tokenClient=null, accessToken=null, tokenExpiry=0, tokenReq=null, cbHandler=null;
+  let tokenClient=null, accessToken=null, tokenExpiry=0, tokenReq=null, cbHandler=null, tokenGen=0;
   let fileId=null, extras=[], lastSweep=0;
-  let connected=false, syncing=false, pushTimer=null, pollTimer=null;
+  let connected=false, syncing=false, authing=false, needsAuth=false, lastError="";
+  let pushTimer=null, pollTimer=null;
   let pendingRerender=false, lastState="";
   const S={suspended:false};
 
@@ -1820,7 +1821,9 @@ const DriveSync=(function(){
     const ios=isStandalone()
       ? "<br><br>This home-screen app signs in separately from Safari — that's an iOS rule, not a bug. Each iPhone, iPad and browser needs its own one-time connect."
       : "";
-    el.innerHTML=base+ios;
+    const esc=(s)=>String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;");
+    const err=lastError ? "<br><br><b>Last error:</b> "+esc(lastError) : "";
+    el.innerHTML=base+ios+err;
   }
   function toggleMenu(force){
     const m=$menu(); if(!m)return;
@@ -1851,44 +1854,96 @@ const DriveSync=(function(){
     return true;
   }
   const hasToken=()=>!!accessToken && Date.now()<tokenExpiry-60000;
+  /* A pending request must never block a new interactive one. If the popup was
+     blocked, or the user closed it, or Google simply never called back, the
+     only thing they can do is tap again — so a tap always abandons whatever is
+     in flight and opens a fresh window. */
   function requestToken(silent){
     if(hasToken()) return Promise.resolve(accessToken);
-    if(tokenReq) return tokenReq;
-    if(!ensureClient()) return Promise.reject(new Error("gis-not-loaded"));
-    tokenReq=new Promise((resolve,reject)=>{
+    if(silent && tokenReq) return tokenReq;
+    if(!ensureClient()) return Promise.reject({error:"gis-not-loaded"});
+    const gen=++tokenGen;
+    const p=new Promise((resolve,reject)=>{
       let done=false;
-      const finish=(fn,arg)=>{ if(done)return; done=true; clearTimeout(tm); cbHandler=null; tokenReq=null; fn(arg); };
+      const finish=(fn,arg)=>{
+        if(done)return; done=true; clearTimeout(tm);
+        if(gen===tokenGen){ cbHandler=null; tokenReq=null; }
+        fn(arg);
+      };
       const tm=setTimeout(()=>finish(reject,{error:"timeout"}), silent?SILENT_TIMEOUT:INTERACTIVE_TIMEOUT);
       cbHandler=(err,resp)=>{
+        if(gen!==tokenGen) return;                        // a newer request took over
         if(err) return finish(reject,err);
         if(!resp || resp.error || !resp.access_token) return finish(reject,resp||{error:"no-response"});
         accessToken=resp.access_token;
         tokenExpiry=Date.now()+((resp.expires_in||3600)*1000);
         finish(resolve,accessToken);
       };
+      if(gen!==tokenGen) return finish(reject,{error:"superseded"});
       try{ tokenClient.requestAccessToken({prompt: silent?"none":""}); }
       catch(e){ finish(reject,e); }
     });
-    return tokenReq;
+    p.catch(()=>{});                                      // superseded rejections are expected
+    tokenReq=p;
+    return p;
   }
   const needsLogin=(e)=>!!e && (e.status===401 || e.error==="interaction_required" || e.error==="login_required"
-                                || e.error==="timeout" || e.error==="popup_failed" || e.message==="gis-not-loaded");
+                                || e.error==="timeout" || e.error==="popup_failed" || e.error==="gis-not-loaded"
+                                || e.message==="gis-not-loaded");
+  /* Plain-language error text, kept on screen instead of only in the console —
+     a sync that fails silently is impossible to diagnose from a phone. */
+  function describeError(e){
+    if(!e) return "Unknown error";
+    if(e.error==="timeout") return "Google never responded — the sign-in window was blocked or closed";
+    if(e.error==="gis-not-loaded"||e.message==="gis-not-loaded") return "Google's sign-in script did not load (network or content blocker)";
+    if(e.error==="popup_failed") return "The browser blocked the sign-in window";
+    if(e.error==="interaction_required"||e.error==="login_required") return "Google needs you to sign in again";
+    if(e.status===401) return "Google rejected the token (401) — sign in again";
+    if(e.status===403) return "Drive refused the request (403) — check the API is enabled and the account has access";
+    if(e.status===404) return "The data file was not found in Drive (404)";
+    if(e.status) return "Drive error "+e.status+(e.body?": "+String(e.body).replace(/\s+/g," ").slice(0,180):"");
+    if(e.error) return String(e.error)+(e.error_description?" — "+e.error_description:"");
+    return e.message||String(e);
+  }
+  function noteError(e){ lastError=describeError(e); console.warn("Care Trends sync:",lastError,e); updateMenuInfo(); }
 
   /* ---- Drive REST helpers ---- */
-  async function api(url,opts){
+  async function api(url,opts,retried){
     const t=hasToken()?accessToken:await requestToken(true);
     const r=await fetch(url,Object.assign({},opts,{headers:Object.assign({Authorization:"Bearer "+t},(opts&&opts.headers)||{})}));
-    if(r.status===401){ accessToken=null; tokenExpiry=0; throw {status:401}; }
+    if(r.status===401){
+      accessToken=null; tokenExpiry=0;
+      if(!retried){                                   // one silent refresh, then give up
+        try{ await requestToken(true); return await api(url,opts,true); }catch(e){}
+      }
+      throw {status:401};
+    }
     if(!r.ok) throw {status:r.status,body:await r.text().catch(()=>"")};
     return r;
   }
   function saveFileId(){ try{ lsSet(FILE_FLAG,fileId||null); }catch(e){} }
-  async function listFiles(){
-    const q=encodeURIComponent("(appProperties has {key='"+APP_TAG+"' and value='1'} or name='"+FILE_NAME+"') and trashed=false");
-    const r=await api("https://www.googleapis.com/drive/v3/files?spaces=drive&q="+q+
+  async function queryFiles(q){
+    const r=await api("https://www.googleapis.com/drive/v3/files?spaces=drive&q="+encodeURIComponent(q)+
                       "&fields=files(id,name,createdTime)&orderBy=createdTime&pageSize=25");
     const j=await r.json();
     return (j.files||[]).filter(f=>f&&f.id);
+  }
+  /* The combined tag-or-name query is the fast path. If Drive rejects it, fall
+     back to two plain queries rather than leaving the app stuck on "Reconnect". */
+  async function listFiles(){
+    const tagged="appProperties has {key='"+APP_TAG+"' and value='1'}";
+    const named="name='"+FILE_NAME+"'";
+    try{
+      return await queryFiles("("+tagged+" or "+named+") and trashed=false");
+    }catch(e){
+      if(!e || e.status!==400) throw e;
+      console.warn("combined Drive query rejected, falling back",e);
+      const a=await queryFiles(named+" and trashed=false").catch(()=>[]);
+      const b=await queryFiles(tagged+" and trashed=false").catch(()=>[]);
+      const seen=new Set();
+      return a.concat(b).filter(f=>seen.has(f.id)?false:(seen.add(f.id),true))
+              .sort((x,y)=>String(x.createdTime||"").localeCompare(String(y.createdTime||"")));
+    }
   }
   /* Pick the canonical file and note any duplicates. Duplicates happen when a
      second device connects inside Drive's search-index lag and creates its own
@@ -2047,14 +2102,15 @@ const DriveSync=(function(){
     syncing=true; setStatus("syncing");
     try{
       await runSync(false);
-      setStatus("synced");
+      needsAuth=false; lastError=""; setStatus("synced");
     }catch(e){
       if(e && e.status===404){                   // file was deleted in Drive
         try{ fileId=null; extras=[]; saveFileId(); await runSync(true); setStatus("synced"); return; }
         catch(e2){ e=e2; }
       }
-      console.warn("sync error",e);
-      setStatus(needsLogin(e) ? "warn" : (connected?"warn":"connect"));
+      noteError(e);
+      needsAuth=needsLogin(e);
+      setStatus("warn");
     }finally{ syncing=false; }
   }
   async function runSync(forceFind){
@@ -2089,21 +2145,26 @@ const DriveSync=(function(){
     pushTimer=setTimeout(()=>{ pushTimer=null; reconcile(); },PUSH_DEBOUNCE);
   }
   function authFailed(e){
-    console.warn("google auth failed",e);
-    setStatus(connected?"warn":"connect");
-    toast(isStandalone()
-      ? "Sign-in didn't finish. Home-screen apps sign in separately — try again, or use Care Trends in Safari on this device."
-      : "Google sign-in was cancelled or blocked");
+    authing=false; needsAuth=true;
+    noteError(e);
+    setStatus("warn");
+    toast(describeError(e)+" — tap Reconnect to try again");
   }
   /* MUST be called straight from a click handler, with no await before it,
-     or the popup is suppressed */
+     or the popup is suppressed. Safe to call again at any time: the new
+     request supersedes whatever was pending. */
   function authAndSync(){
-    setStatus("syncing");
+    if(!ensureClient()){ authFailed({error:"gis-not-loaded"}); return; }
+    authing=true; needsAuth=true; setStatus("syncing");
     requestToken(false).then(()=>{
+      authing=false; needsAuth=false; lastError="";
       connected=true; lsSet(ENABLED_FLAG,true);
       startPoll();
       return reconcile();
-    }).catch(authFailed);
+    }).catch(e=>{
+      if(e && e.error==="superseded") return;   // a later tap owns the flow now
+      authFailed(e);
+    });
   }
   async function connect(){
     if(!isConfigured()) return;
@@ -2125,14 +2186,19 @@ const DriveSync=(function(){
   }
   function syncNow(){
     toggleMenu(false);
-    if(hasToken()) reconcile(); else authAndSync();     // interactive path stays inside the gesture
+    if(!hasToken() || needsAuth) return authAndSync();  // interactive path stays inside the gesture
+    reconcile().then(()=>{ if(lastError) toast(lastError); });
   }
+  /* Routing is driven by real state, never by the button's current label. The
+     old version keyed off lastState, so once authAndSync flipped the label to
+     "Syncing…" every further tap fell through to the menu and there was no way
+     back to a sign-in prompt. */
   function onBtn(){
     if(!isConfigured()) return;
+    if(!connected) return connect();          // never linked on this device
+    if(needsAuth || authing) return authAndSync();   // stuck or failed -> fresh popup
     if(lastState==="warn") return authAndSync();
-    if(lastState==="connect") return connect();
-    if(connected) return toggleMenu();
-    connect();
+    return toggleMenu();
   }
   function startPoll(){ stopPoll(); pollTimer=setInterval(()=>{ if(document.visibilityState==="visible") reconcile(); },POLL_MS); }
   function stopPoll(){ if(pollTimer){clearInterval(pollTimer);pollTimer=null;} }
