@@ -15,3 +15,13 @@ compatibility_date = "2026-08-27"
 directory = "./public"
 binding = "ASSETS"
 run_worker_first = ["/api/*"]
+
+# Plain variables must live here, not in the dashboard. Wrangler clears all
+# plain vars on every deploy and reapplies only what this file declares, so a
+# dashboard-only value silently disappears on the next push. Secrets are the
+# exception — they are never deleted by a deploy, which is why
+# GOOGLE_CLIENT_SECRET and COOKIE_KEY stay in the dashboard and must NOT be
+# added here. The client ID is public (it is already in index.html), so it is
+# safe to commit.
+[vars]
+GOOGLE_CLIENT_ID = "258776261041-fkgefi20lnahbh46u2fm8h8h10ldpelt.apps.googleusercontent.com"
