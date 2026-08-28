@@ -1,0 +1,17 @@
+# Care Trends — Cloudflare Workers configuration
+#
+# Tells Cloudflare three things: which script to run, where the website's
+# files live, and that /api/* must reach the script rather than being treated
+# as a missing page.
+#
+# "name" must match the Worker's name in the Cloudflare dashboard. If your
+# project is called something else, change it here to match.
+
+name = "care-trends"
+main = "worker/index.js"
+compatibility_date = "2026-08-27"
+
+[assets]
+directory = "./public"
+binding = "ASSETS"
+run_worker_first = ["/api/*"]
