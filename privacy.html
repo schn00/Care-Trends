@@ -1,84 +1,103 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Care Trends — Privacy Statement</title>
-<meta name="theme-color" content="#4c6a4f">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Figtree:wght@400;500;600;700&display=swap" rel="stylesheet">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Privacy Policy — Care Trends</title>
 <style>
-  :root{
-    --bg:#eef0ec; --surface:#ffffff; --surface-2:#f4f6f2;
-    --ink:#333630; --muted:#696e67; --line:#e3e6e0; --line-soft:#eceee9;
-    --teal:#4c6a4f; --teal-700:#3d5740; --teal-050:#dfe7dd;
-    --radius:22px; --radius-sm:16px;
-    color-scheme:light;
-  }
+  :root{ --ink:#1c1c1e; --muted:#6b6b70; --line:#e3e3e6; --bg:#fbfbfc; --card:#fff; --accent:#2f6f5e; }
   @media (prefers-color-scheme: dark){
-    :root{
-      --bg:#141713; --surface:#1e221c; --surface-2:#262b24;
-      --ink:#e9ece5; --muted:#98a093; --line:#333a30; --line-soft:#2a3027;
-      --teal:#7fa683; --teal-700:#a3c7a6; --teal-050:#26332a;
-      color-scheme:dark;
-    }
+    :root{ --ink:#ececf0; --muted:#9a9aa2; --line:#2c2c31; --bg:#141416; --card:#1c1c1f; --accent:#7fc0ac; }
   }
   *{box-sizing:border-box}
-  body{margin:0;background:var(--bg);color:var(--ink);
-    font-family:"Figtree",system-ui,-apple-system,Segoe UI,Roboto,sans-serif;
-    font-size:15.5px;line-height:1.62;-webkit-font-smoothing:antialiased}
-  .wrap{max-width:700px;margin:0 auto;padding:56px 22px 96px}
-  h1,h2{font-family:"Fraunces",Georgia,serif;font-weight:400;letter-spacing:-.012em;margin:0}
-  .mark{width:46px;height:46px;border-radius:16px;background:var(--teal-050);color:var(--teal);
-    display:grid;place-items:center;margin-bottom:22px}
-  .mark svg{width:25px;height:25px}
-  h1{font-size:34px;line-height:1.1;margin-bottom:6px}
-  .sub{color:var(--muted);font-size:15px;margin-bottom:4px}
-  .kicker{color:var(--muted);font-size:12.5px;text-transform:uppercase;letter-spacing:.08em;font-weight:600;margin-bottom:30px}
-  h2{font-size:21px;margin:32px 0 8px}
-  p{margin:0 0 15px}
-  .lede{background:var(--teal-050);border:1px solid var(--line);border-radius:var(--radius);
-    padding:20px 22px;color:var(--teal-700);font-size:16px;font-weight:500;margin-bottom:30px;line-height:1.55}
-  .card{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:14px 30px 30px}
-  a{color:var(--teal-700);text-decoration-color:var(--line)}
-  code{background:var(--surface-2);border:1px solid var(--line);border-radius:8px;padding:2px 7px;font-size:13.5px;
-    font-family:ui-monospace,SFMono-Regular,Menlo,monospace}
-  .foot{color:var(--muted);font-size:13px;margin-top:32px;line-height:1.55}
+  body{ margin:0; padding:32px 20px 72px; background:var(--bg); color:var(--ink);
+    font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-text-size-adjust:100%; }
+  main{max-width:640px; margin:0 auto}
+  h1{font-size:1.6rem; margin:0 0 4px}
+  .date{color:var(--muted); font-size:.9rem; margin:0 0 24px}
+  h2{font-size:1.05rem; margin:28px 0 8px}
+  p,li{margin:0 0 10px}
+  ul{padding-left:22px}
+  a{color:var(--accent)}
+  .summary{background:var(--card); border:1px solid var(--line); border-radius:12px; padding:16px 18px; margin-bottom:8px}
+  .summary p:last-child{margin-bottom:0}
+  code{background:var(--card); border:1px solid var(--line); border-radius:5px; padding:1px 5px; font-size:.88em}
+  footer{margin-top:36px; padding-top:16px; border-top:1px solid var(--line); color:var(--muted); font-size:.88rem}
 </style>
 </head>
 <body>
-<div class="wrap">
-  <div class="mark" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12h4l2 5 4-12 2 7h6"/></svg></div>
-  <h1>Care Trends</h1>
-  <div class="sub">A tool for caregivers to track health information for someone in their care.</div>
-  <div class="kicker">Privacy Statement</div>
+<main>
 
-  <div class="lede">Care Trends does not run any server and does not collect your data. Everything you enter is stored in your own Google account's Google Drive. The creator of Care Trends never receives, stores, or can access your information.</div>
+  <h1>Care Trends — Privacy Policy</h1>
+  <p class="date">Last updated: 8/27/26</p>
 
-  <div class="card">
-    <h2>Where your data is stored</h2>
-    <p>All information you enter is stored in your own Google account's Google Drive. It is saved in a file that this app creates in your Drive (named <code>care-trends-data.json</code>), and it stays under your control. A copy is also kept in your device's browser so the app loads instantly and works offline.</p>
-
-    <h2>What the app's creator can see</h2>
-    <p>Nothing. The creator of Care Trends does not receive, store, or have any ability to access your information. Your data never passes through any server run by the creator.</p>
-
-    <h2>What the app accesses</h2>
-    <p>When you connect Google Drive, Care Trends asks only for permission to create and update its own data file in your Drive. It cannot see, read, or change any other files in your Drive.</p>
-
-    <h2>Your control</h2>
-    <p>You can view your data anytime in your Google Drive, export it to an Excel file from within the app, or delete it. You can revoke the app's access to your Drive at any time in your Google Account security settings, under &ldquo;Third-party apps &amp; services.&rdquo;</p>
-
-    <h2>Security of your account</h2>
-    <p>Because your data lives in your Google account, keeping that account secure &mdash; your password and sign-in settings &mdash; is your responsibility. If several caregivers share one Google account to view the same log, all of them are responsible for keeping that account and its sign-in details secure.</p>
-
-    <h2>This is not medical software</h2>
-    <p>Care Trends is a personal tracking tool. It is not a medical device, does not provide medical advice, and does not replace professional medical care. Always consult a qualified healthcare provider for medical decisions.</p>
-
-    <h2>Contact</h2>
-    <p>Questions about this app or this statement: <a href="mailto:corecaresc@gmail.com">corecaresc@gmail.com</a></p>
+  <div class="summary">
+    <p>Your records stay on your device, and in your own Google Drive if you turn on sync.
+    They are never sent to me and I cannot read them. Care Trends is a personal,
+    non-commercial project with no company behind it.</p>
   </div>
 
-</div>
+  <h2>Your data</h2>
+  <p>Everything you enter is saved in your browser on the device you are using. If you
+  connect Google Drive, the same records are also saved as a single file,
+  <code>care-trends-data.json</code>, in your own Drive.</p>
+  <p>The app asks only for the <code>drive.file</code> permission — the narrowest Drive
+  permission Google offers. It grants access solely to the file the app creates, and cannot
+  see anything else in your Drive.</p>
+
+  <h2>The sign-in service</h2>
+  <p>Signing in to Google uses a credential that cannot safely be published in a web page,
+  so sign-in requests go through a small function I operate at <code>/api/token</code>. It
+  exchanges sign-in codes for access tokens, renews expired ones, and stores your renewal
+  token in an encrypted cookie in your browser that page scripts cannot read.</p>
+  <p>It keeps no database and writes no records. Your care data never passes through it —
+  those records travel directly between your browser and Google.</p>
+  <p>Being straight about the trade-off: the access tokens crossing this function could
+  read and write your Care Trends file. I do not retain or use them, but you cannot inspect
+  that code from your browser the way you can inspect the app itself. The source is public
+  at <a href="https://github.com/schn00/Care-Trends">https://github.com/schn00/Care-Trends</a>.</p>
+
+  <h2>What I collect</h2>
+  <p>Nothing. No analytics, no advertising, no trackers, no accounts. Cloudflare, which
+  hosts the site, handles ordinary request information such as IP addresses to deliver and
+  protect the service under
+  <a href="https://www.cloudflare.com/privacypolicy/" rel="noopener">its own privacy
+  policy</a>. I do not access it.</p>
+
+  <h2>Google</h2>
+  <p>Care Trends' use of information received from Google APIs adheres to the
+  <a href="https://developers.google.com/terms/api-services-user-data-policy" rel="noopener">Google
+  API Services User Data Policy</a>, including its Limited Use requirements. That data is
+  used only to provide sync. It is never transferred to others, used for advertising, sold,
+  or used to train any model.</p>
+
+  <h2>Removing your data</h2>
+  <ul>
+    <li><em>Disconnect this device</em> in the app revokes access and deletes the sign-in cookie.</li>
+    <li>Delete <code>care-trends-data.json</code> from your Drive, then empty the trash.</li>
+    <li>Clear the site's data in your browser, or delete the home-screen app.</li>
+    <li>Revoke access any time at
+      <a href="https://myaccount.google.com/permissions" rel="noopener">your Google permissions page</a>.</li>
+  </ul>
+  <p>I hold nothing, so there is nothing for me to delete on your behalf.</p>
+
+  <h2>Not medical software</h2>
+  <p>Care Trends is a record-keeping tool, not a medical device. It gives no medical advice
+  and is no substitute for professional judgement. Do not rely on it in an emergency, and
+  verify anything that matters against the original prescription or clinical instruction.</p>
+
+  <h2>Availability</h2>
+  <p>This is a personal project with no guarantee of uptime or continued existence. If the
+  sign-in service stops, each device keeps working with the data already on it and your
+  Drive file stays in your Drive. Export a backup of anything you cannot afford to lose.</p>
+
+  <h2>Changes</h2>
+  <p>If this policy changes in a way that affects how information is handled, the date above
+  will change and the revision will show in the public repository.</p>
+
+  <footer>Questions: <a href="mailto:corecaresc@gmail.com">corecaresc@gmail.com</a></footer>
+
+</main>
 </body>
 </html>
