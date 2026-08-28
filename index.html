@@ -1972,10 +1972,12 @@ const DriveSync=(function(){
     if(e.error==="missing_verifier") return "Sign-in was started in a different tab — try again from this one";
     if(e.error==="state_mismatch") return "Sign-in could not be verified — try again";
     if(e.error==="no_session_storage") return "Private browsing blocks sign-in on this device";
-    if(e.status===401) return "Google rejected the token (401) — sign in again";
-    if(e.status===403) return "Drive refused the request (403) — check the Drive API is enabled";
-    if(e.status===404) return "The data file was not found in Drive (404)";
-    if(e.status) return "Error "+e.status+(e.error?" "+e.error:"")+(e.detail?": "+String(e.detail).slice(0,180):"")+(e.body?": "+String(e.body).replace(/\s+/g," ").slice(0,180):"");
+    const where=e.op?" during "+e.op:"";
+    const why=e.body?" — "+String(e.body).replace(/\s+/g," ").slice(0,180):"";
+    if(e.status===401) return "Google rejected the token (401)"+where+" — sign in again";
+    if(e.status===403) return "Drive refused the request (403)"+where+why;
+    if(e.status===404) return "Drive could not find the file (404)"+where+why;
+    if(e.status) return "Error "+e.status+where+(e.error?" "+e.error:"")+(e.detail?": "+String(e.detail).slice(0,180):"")+why;
     if(e.error) return String(e.error)+(e.detail?" — "+e.detail:"");
     return e.message||String(e);
   }
@@ -1984,21 +1986,29 @@ const DriveSync=(function(){
   /* ---- Drive REST helpers ---- */
   async function api(url,opts,retried){
     const t=hasToken()?accessToken:await refreshToken();
+    const op=(opts&&opts.op)||"request";
     const r=await fetch(url,Object.assign({},opts,{headers:Object.assign({Authorization:"Bearer "+t},(opts&&opts.headers)||{})}));
     if(r.status===401){
       accessToken=null; tokenExpiry=0;
       if(!retried){                                   // one silent refresh, then give up
         try{ accessToken=null; await refreshToken(); return await api(url,opts,true); }catch(e){}
       }
-      throw {status:401};
+      throw {status:401,op};
     }
-    if(!r.ok) throw {status:r.status,body:await r.text().catch(()=>"")};
+    if(!r.ok){
+      /* Drive puts a human-readable reason in the body. Carrying it through is
+         the difference between "404" and "404 on read: File not found: <id>". */
+      const raw=await r.text().catch(()=>"");
+      let msg="";
+      try{ msg=(JSON.parse(raw).error||{}).message||""; }catch(e){ msg=raw; }
+      throw {status:r.status, op, body:msg};
+    }
     return r;
   }
   function saveFileId(){ try{ lsSet(FILE_FLAG,fileId||null); }catch(e){} }
   async function queryFiles(q){
     const r=await api("https://www.googleapis.com/drive/v3/files?spaces=drive&q="+encodeURIComponent(q)+
-                      "&fields=files(id,name,createdTime)&orderBy=createdTime&pageSize=25");
+                      "&fields=files(id,name,createdTime)&orderBy=createdTime&pageSize=25",{op:"file search"});
     const j=await r.json();
     return (j.files||[]).filter(f=>f&&f.id);
   }
@@ -2026,14 +2036,18 @@ const DriveSync=(function(){
     if(!force && fileId && (Date.now()-lastSweep)<SWEEP_MS) return;
     const files=await listFiles();
     lastSweep=Date.now();
-    if(!files.length){ if(!force) return; fileId=null; extras=[]; saveFileId(); return; }
+    /* No match means any id we were holding is stale — the file was deleted, or
+       a re-consent reset the per-file grant that drive.file scope depends on.
+       Clear it either way, or the next read asks Drive for a file it cannot
+       see and comes back 404. */
+    if(!files.length){ fileId=null; extras=[]; saveFileId(); return; }
     fileId=files[0].id;
     extras=files.slice(1).map(f=>f.id);
     saveFileId();
   }
   async function readFile(id){
     if(!id) return null;
-    const r=await api("https://www.googleapis.com/drive/v3/files/"+id+"?alt=media");
+    const r=await api("https://www.googleapis.com/drive/v3/files/"+id+"?alt=media",{op:"read"});
     try{return await r.json();}catch(e){return null;}
   }
   async function writeFile(obj){
@@ -2048,7 +2062,7 @@ const DriveSync=(function(){
     const url=fileId
       ? "https://www.googleapis.com/upload/drive/v3/files/"+fileId+"?uploadType=multipart&fields=id"
       : "https://www.googleapis.com/upload/drive/v3/files?uploadType=multipart&fields=id";
-    const r=await api(url,{method,headers:{"Content-Type":"multipart/related; boundary="+boundary},body:multipart});
+    const r=await api(url,{method,op:"save",headers:{"Content-Type":"multipart/related; boundary="+boundary},body:multipart});
     const j=await r.json();
     if(j&&j.id){ fileId=j.id; saveFileId(); }
   }
@@ -2059,7 +2073,7 @@ const DriveSync=(function(){
       if(id===fileId) continue;
       try{
         await api("https://www.googleapis.com/drive/v3/files/"+id,
-          {method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({trashed:true})});
+          {method:"PATCH",op:"tidy duplicate",headers:{"Content-Type":"application/json"},body:JSON.stringify({trashed:true})});
       }catch(e){ console.warn("could not trash duplicate",id,e); }
     }
   }
@@ -2190,7 +2204,18 @@ const DriveSync=(function(){
   async function runSync(forceFind){
     if(!hasToken()) await refreshToken();
     await resolveFile(forceFind);
-    let remote=fileId?await readFile(fileId):null;
+    /* A 404 here means the file is gone or unreachable under the current
+       grant. That is a recoverable state, not an error: forget the id and let
+       the code below create a fresh file from local data. */
+    let remote=null;
+    if(fileId){
+      try{
+        remote=await readFile(fileId);
+      }catch(e){
+        if(e && e.status===404){ fileId=null; extras=[]; saveFileId(); }
+        else throw e;
+      }
+    }
     for(const id of extras){                     // fold in any duplicate files
       const d=await readFile(id).catch(()=>null);
       if(d) remote=remote?mergeData(remote,d):d;
