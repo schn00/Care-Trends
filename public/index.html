@@ -395,6 +395,18 @@
   .st-chip.live .st-dur{color:var(--on-accent);opacity:.82}
   .st-chip.tap.live:hover{background:var(--card-ink,var(--orange));color:var(--on-accent)}
   /* ---- treatment grid: rows are drugs/labs, columns are visits ---- */
+  /* the course picker: a plain select in the tab's action row, and a labelled
+     row above the editor with the add and delete controls beside it */
+  .treat-switch select{height:34px;border-radius:11px;border:1px solid var(--edge-soft);
+    background:var(--surface);color:var(--ink);font:inherit;font-size:13px;padding:0 8px;max-width:190px}
+  .rg-pick{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:0 0 14px;padding-bottom:14px;
+    border-bottom:1px solid var(--line-soft)}
+  .rg-pick label{font-size:10.5px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+  .rg-pick select{flex:1;min-width:150px;height:34px;border-radius:11px;border:1px solid var(--edge-soft);
+    background:var(--surface);color:var(--ink);font:inherit;font-size:13.5px;padding:0 8px}
+  .rg-newline{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-top:16px;
+    padding-top:14px;border-top:1px solid var(--line-soft)}
+  .rg-newline .hint{margin:0}
   table.tg{border-collapse:separate;border-spacing:3px;font-size:13px;width:100%}
   table.tg th.tlead,table.tg td.tlead{position:sticky;left:0;background:var(--surface);z-index:2;text-align:left;min-width:168px;max-width:200px;padding:8px 12px 8px 14px}
   table.tg thead th{font-size:10.5px;font-weight:600;color:var(--muted);letter-spacing:.02em;padding:6px 10px;text-align:left;white-space:nowrap;background:none}
@@ -402,6 +414,10 @@
   table.tg thead th.tv .cyc{display:block;font-size:12.5px;font-weight:600;color:var(--teal-700)}
   table.tg thead th.tv .dt{display:block;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums;font-weight:400;margin-top:1px}
   table.tg thead th.tv button{border:none;background:none;padding:0;text-align:left;cursor:pointer;font:inherit}
+  /* the column the sheet opens on gets a hairline under its heading — enough to
+     find your place, not enough to compete with the held and changed cells.
+     It has to come after the rule above, which clears the border. */
+  table.tg thead th.tv-latest button{border-bottom:2px solid var(--teal);padding-bottom:3px}
   table.tg td.tlead{font-weight:500;font-size:13.5px}
   table.tg td.tlead .sub{font-size:11px;color:var(--muted);font-weight:400;margin-top:1px}
   /* a section header is a band across the whole row. The lead cell is sticky, so it
@@ -492,7 +508,7 @@
   .hv-lab{font-size:10.5px;color:var(--muted);font-weight:700;white-space:nowrap;letter-spacing:.02em}
   /* the browser paints its own well on inputs and selects — turn that off and
      take the pill's colour, so the field reads as part of the pill in either theme */
-  .hv-f input,.hv-f select{appearance:none;-webkit-appearance:none;-moz-appearance:none;
+  .hv-f input,.hv-f select,.hv-f textarea{appearance:none;-webkit-appearance:none;-moz-appearance:none;
     border:none;border-radius:0;box-shadow:none;outline:none;background-color:var(--chip);
     padding:0;height:23px;color:var(--ink);
     font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:15px;font-weight:600;text-align:center;font-variant-numeric:tabular-nums}
@@ -504,19 +520,40 @@
   .hv-f input{width:46px}
   .hv-f input.hv-w2{width:32px}
   .hv-f input.hv-wide{width:120px;text-align:left;font-family:"Figtree",system-ui,sans-serif;font-size:13px;font-weight:500}
+  /* A free-text row (Symptom, Mobility) is the only field here whose value has
+     no fixed length, and a 120px box shows about fifteen characters. It is a
+     textarea rather than an input so that focusing it can wrap: at rest it is
+     one line, sized to what it holds and clipped past a cap; focused, it takes
+     a line of its own and grows downward until the whole note is on screen.
+     Concise when idle, complete when in use — which matters most on a phone,
+     where a single line is barely a third of a sentence. */
+  .hv-f textarea.hv-wide{width:120px;height:23px;min-height:23px;text-align:left;resize:none;overflow:hidden;
+    white-space:nowrap;line-height:23px;padding:0;display:block;
+    font-family:"Figtree",system-ui,sans-serif;font-size:13px;font-weight:500;transition:width .14s ease}
+  .hv-f.hv-text{max-width:100%;align-items:flex-start}
+  .hv-f.hv-text .hv-lab{line-height:23px}
+  .hv-f.hv-text:focus-within{flex:1 1 100%}
+  .hv-f.hv-text:focus-within textarea.hv-wide{width:100%;white-space:pre-wrap;line-height:1.45;padding:2px 0}
+  /* a clipped line ends in a fade, since a textarea cannot carry an ellipsis */
+  .hv-f.hv-text.hv-clip textarea.hv-wide{-webkit-mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent);
+    mask-image:linear-gradient(90deg,#000 calc(100% - 22px),transparent)}
+  .hv-f.hv-text:focus-within textarea.hv-wide{-webkit-mask-image:none;mask-image:none}
+  .hv-meas{position:absolute;left:-9999px;top:0;visibility:hidden;white-space:pre;pointer-events:none}
   .hv-f select{font-family:"Figtree",system-ui,sans-serif;font-size:13px;font-weight:500;text-align:left;height:24px;cursor:pointer;
     padding-right:13px;background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'><path d='M1 1l4 4 4-4' fill='none' stroke='%23888' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/></svg>");background-repeat:no-repeat;
     background-position:right center;background-size:9px 5px}
-  .hv-f input:focus,.hv-f select:focus{outline:none;box-shadow:0 2px 0 var(--teal);background-color:var(--chip)}
+  .hv-f input:focus,.hv-f select:focus,.hv-f textarea:focus{outline:none;box-shadow:0 2px 0 var(--teal);background-color:var(--chip)}
   /* [data-card] input:not(...):not(...) higher up scores (0,3,1) and would paint
      these with the card's inset. Match its shape so the pill's own colour wins. */
   [data-card] .hv-f input:not([type=checkbox]):not([type=radio]),
+  [data-card] .hv-f textarea,
   [data-card] .hv-f select:not([multiple]){background-color:var(--chip);border:none;color:var(--ink)}
   [data-card] .hv-f input:not([type=checkbox]):not([type=radio]):focus,
+  [data-card] .hv-f textarea:focus,
   [data-card] .hv-f select:not([multiple]):focus{background-color:var(--chip);box-shadow:0 2px 0 var(--teal)}
   [data-card] input.hv-time:not([type=checkbox]):not([type=radio]){background-color:var(--surface);border:1px solid var(--line);color:var(--ink)}
   [data-card] input.hv-time:not([type=checkbox]):not([type=radio]):focus{border-color:var(--teal);box-shadow:0 0 0 2px var(--teal-050)}
-  .hv-f input::placeholder{color:var(--muted);opacity:.55;font-weight:500}
+  .hv-f input::placeholder,.hv-f textarea::placeholder{color:var(--muted);opacity:.55;font-weight:500}
   .hv-slash{color:var(--muted);font-size:13px;font-weight:600}
   /* Yes/No is one control that cycles blank to yes to no, so it never changes
      width and needs no second button */
@@ -898,6 +935,10 @@
   .hint{font-size:11.5px;color:var(--muted);margin-top:6px}
   .custom-col-item{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:10px 12px;border:1px solid var(--line-soft);border-radius:10px;margin-bottom:8px}
   .custom-col-item .cc-name{font-weight:600}
+  /* the reorder pair stands upright at the head of the row, so the arrows point
+     the way the row will actually move */
+  .mv-grp.mv-col{flex-direction:column;border-radius:9px;flex:0 0 auto}
+  .mv-grp.mv-col .mv-btn{width:26px;height:21px;display:grid;place-items:center}
   .custom-col-item>div:first-child{min-width:0}
   .custom-col-item .cc-type{font-size:11.5px;color:var(--muted);margin-top:2px}
 
@@ -1073,12 +1114,12 @@
   .qf-field input,.qf-field select,.qf-field textarea,
   .daypick input,.tcell,.tlab-in,.tnote,.hfb-goal input,
   [data-card] input:not([type=checkbox]):not([type=radio]),[data-card] select,
-  .hv-f input,.hv-f select,[data-card] .hv-f select:not([multiple]){
+  .hv-f input,.hv-f select,.hv-f textarea,[data-card] .hv-f select:not([multiple]){
     border:1px solid var(--edge-soft)}
-  .hv-f input,.hv-f select{border-radius:9px}
+  .hv-f input,.hv-f select,.hv-f textarea{border-radius:9px}
   .qf-field input:focus,.qf-field select:focus,.qf-field textarea:focus,
   .daypick input:focus,.tcell:focus,.tlab-in:focus,.tnote:focus,
-  .hv-f input:focus,.hv-f select:focus,
+  .hv-f input:focus,.hv-f select:focus,.hv-f textarea:focus,
   [data-card] input:focus,[data-card] select:focus{
     outline:2px solid var(--teal);outline-offset:1px;border-color:var(--teal)}
   :focus-visible{outline:2px solid var(--teal);outline-offset:2px}
@@ -1093,7 +1134,13 @@
   .shell{display:flex;align-items:flex-start;min-height:100vh}
   .rail{position:sticky;top:0;height:100vh;flex:0 0 88px;width:88px;
         background:var(--surface);border-right:1px solid var(--edge);
-        display:flex;flex-direction:column;align-items:stretch;gap:3px;padding:12px 8px;z-index:45}
+        display:flex;flex-direction:column;align-items:stretch;gap:3px;padding:12px 8px;z-index:45;
+        /* a short window (or enough sections) can make the rail taller than the
+           screen; without this the foot group is simply cut off the bottom */
+        overflow-y:auto;overscroll-behavior:contain;scrollbar-width:thin}
+  .rail::-webkit-scrollbar{width:6px}
+  .rail::-webkit-scrollbar-thumb{background:var(--edge);border-radius:3px}
+  .rail::-webkit-scrollbar-track{background:transparent}
   .rail-tabs{display:flex;flex-direction:column;align-items:stretch;gap:3px}
   .rail-btn{width:100%;flex:0 0 auto;border:1px solid transparent;background:none;
             border-radius:13px;color:var(--muted);display:flex;flex-direction:column;
@@ -1104,6 +1151,12 @@
   .rl-lbl{font-size:10.5px;font-weight:500;line-height:1.2;text-align:center;
           letter-spacing:.005em;max-width:100%}
   .rail-btn:hover{background:var(--inset);color:var(--ink);border-color:var(--edge-soft)}
+  /* pushed to the bottom and set off by a rule, so the sections above stay a
+     single uninterrupted list — these are tools, not places to go */
+  .rail-foot{margin-top:auto;display:flex;flex-direction:column;align-items:stretch;gap:3px;
+             padding-top:10px;border-top:1px solid var(--edge-soft)}
+  .rail-act{color:var(--muted)}
+  .rail-act svg{width:19px;height:19px}
   .rail-btn.on{background:var(--teal);color:var(--on-accent);border-color:var(--teal)}
   .rail-btn.on:hover{background:var(--teal-700);color:var(--on-accent)}
   /* appearance and sync sit in the header as icon-only buttons, just left of
@@ -1113,6 +1166,18 @@
   .hdr-btn .tlabel,.hdr-btn .slabel{position:absolute;width:1px;height:1px;overflow:hidden;
            clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
   .hdr-btn svg{width:17px;height:17px}
+  /* a typed time field: text box plus a clock that opens the native picker.
+     The native input is present but visually gone — it exists only so
+     showPicker() has something to attach to. */
+  .tfield{position:relative;display:block}
+  .tfield .tf-txt{width:100%;padding-right:32px}
+  .tfield.tf-lg .tf-txt{padding:10px 32px 10px 12px;border:1px solid var(--line);border-radius:9px}
+  .tfield .tf-pick{position:absolute;right:5px;top:50%;transform:translateY(-50%);
+    width:24px;height:24px;display:grid;place-items:center;border:none;background:none;
+    color:var(--muted);border-radius:7px;cursor:pointer;padding:0}
+  .tfield .tf-pick:hover{background:var(--inset);color:var(--ink)}
+  .tfield .tf-native{position:absolute;right:8px;bottom:0;width:1px;height:1px;opacity:0;
+    pointer-events:none;border:0;padding:0}
   .topbar-inner .sync-wrap{display:flex}
   .shell-main{flex:1;min-width:0}
   .shell-main .topbar{background:var(--bg);border-bottom:1px solid var(--line-soft)}
@@ -1137,16 +1202,28 @@
     .shell{display:block;min-height:0}
     .botbar{display:flex;position:fixed;left:0;right:0;bottom:0;z-index:70;
             background:var(--surface);border-top:1px solid var(--edge);
-            padding:6px 4px calc(6px + env(safe-area-inset-bottom));
+            /* no vertical padding: every pixel between the top rule and the home
+               indicator belongs to a button, so there is no dead strip to miss */
+            padding:0 4px env(safe-area-inset-bottom);
             justify-content:space-around;align-items:stretch}
-    .bot-btn{flex:1 1 0;min-width:0;border:none;background:none;color:var(--muted);
-             display:flex;flex-direction:column;align-items:center;gap:3px;
-             padding:5px 2px;border-radius:11px;font-size:10.5px;font-weight:500;
-             line-height:1.15;text-align:center}
+    /* The tap target is the whole cell, top rule to safe area. The pill you can
+       see is a pseudo-element inset inside it, so making the button look smaller
+       never makes it harder to hit. */
+    .bot-btn{position:relative;flex:1 1 0;min-width:0;border:none;background:none;color:var(--muted);
+             display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+             padding:9px 2px;min-height:56px;border-radius:0;font-size:10.5px;font-weight:500;
+             line-height:1.15;text-align:center;-webkit-tap-highlight-color:transparent}
+    .bot-btn::before{content:"";position:absolute;inset:4px 3px;border-radius:12px;
+             background:transparent;transition:background .12s;pointer-events:none}
+    .bot-btn>*{position:relative}
     .bot-btn svg{width:21px;height:21px}
     .bot-btn span{display:block;max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-    .bot-btn.on{color:var(--teal-700)}
-    .bot-btn.on svg{color:var(--teal)}
+    .bot-btn.on{color:var(--on-accent)}
+    .bot-btn.on svg{color:var(--on-accent)}
+    .bot-btn.on::before{background:var(--teal)}
+    /* a press has to answer, or a tap that landed feels the same as one that missed */
+    .bot-btn:active::before{background:var(--inset)}
+    .bot-btn.on:active::before{background:var(--teal-700)}
     .bot-more{position:relative;flex:1 1 0;display:flex}
     .bot-more .menu{top:auto;bottom:calc(100% + 8px);right:4px;min-width:200px}
     /* the bar floats over the page, so the last row of content clears it */
@@ -1164,8 +1241,8 @@
 
   /* a ghost is the previous reading, so it has to look unmistakably unlike a
      typed value: muted, lighter, and gone the moment anything is entered */
-  .hv-f input::placeholder{color:var(--muted);opacity:.85;font-weight:400}
-  .hv-f input:focus::placeholder{opacity:.45}
+  .hv-f input::placeholder,.hv-f textarea::placeholder{color:var(--muted);opacity:.85;font-weight:400}
+  .hv-f input:focus::placeholder,.hv-f textarea:focus::placeholder{opacity:.45}
 
   /* the count marker sits in the cell corner and is its own target — tapping
      the cell still opens the hour, tapping the marker chooses which reading */
@@ -1419,6 +1496,7 @@ window.Theme=(function(){
 <div class="shell">
 <nav class="rail" aria-label="Sections">
   <div class="rail-tabs" id="tabBar"></div>
+  <div class="rail-foot" id="railFoot" role="group" aria-label="Settings and data"></div>
 </nav>
 <div class="shell-main">
 <div class="topbar">
@@ -1752,6 +1830,7 @@ window.Theme=(function(){
     <div class="section-head">
       <div><h2 id="treatTitle">Treatment</h2><p class="lead" id="treatLead">One column per visit. Doses come from the regimen and the body surface area, so changing the BSA updates them all.</p></div>
       <div class="head-actions">
+        <span class="treat-switch" id="treatSwitch" style="display:none"></span>
         <button class="btn btn-sm" id="regimenBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><path d="M12 3v18M3 12h18"/></svg> Regimen</button>
         <button class="btn btn-sm" id="treatRowsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><rect x="3" y="3" width="18" height="7"/><rect x="3" y="14" width="18" height="7"/></svg> Rows</button>
         <button class="btn btn-primary" id="addVisitBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add visit</button>
@@ -2039,16 +2118,30 @@ function lsSet(k,v){ if(hasLS){localStorage.setItem(k,JSON.stringify(v));} else 
    travel with the data file, so any device can work out, per entry, which
    side is newer and whether it was deleted after its last edit.
    ===================================================================== */
+/* Settings used to be treated as per-device and never crossed between phones.
+   That broke more than preferences: the VALUES of a custom row sync (they live
+   on the entry as custom[cid]) while the column that displays them lived only
+   in prefs, so the reading arrived on the other device with nowhere to appear.
+   Same for flushes against flushCols, and the whole Treatment regimen.
+   Everything in prefs is shared now except the two things that genuinely belong
+   to one device: this phone's notification and reminder settings. Appearance is
+   already outside prefs, in its own key. */
+const PREFS_LOCAL=["notif"];
+/* Lists whose items carry their own id. These union across devices instead of
+   one side's whole list replacing the other's — two caregivers each adding a
+   flush column must end up with both, or the loser's flush data is orphaned. */
+const PREFS_LISTS=["customCols","medCols","medlogCols","nutriCols","feedCols","flushCols","regimens"];
 const TOMB_TTL=120*24*3600*1000;         // tombstones expire after ~4 months
 const LEGACY_M=1;                        // stamp for data written before this existed
 
-function metaGet(){ const m=lsGet(KEYS.meta)||{}; m.del=m.del||{}; m.notes=m.notes||{}; m.notesDel=m.notesDel||{}; return m; }
+function metaGet(){ const m=lsGet(KEYS.meta)||{}; m.del=m.del||{}; m.notes=m.notes||{}; m.notesDel=m.notesDel||{}; m.prefs=m.prefs||{}; m.prefsDel=m.prefsDel||{}; return m; }
 function metaSet(m){ lsSet(KEYS.meta,m); }
-function metaOf(o){ const m=(o&&o[KEYS.meta])||{}; return {del:m.del||{},notes:m.notes||{},notesDel:m.notesDel||{}}; }
+function metaOf(o){ const m=(o&&o[KEYS.meta])||{}; return {del:m.del||{},notes:m.notes||{},notesDel:m.notesDel||{},prefs:m.prefs||{},prefsDel:m.prefsDel||{}}; }
 function gcMeta(m,now){
   const cut=(now||Date.now())-TOMB_TTL;
   Object.keys(m.del||{}).forEach(k=>{ Object.keys(m.del[k]).forEach(id=>{ if(m.del[k][id]<cut) delete m.del[k][id]; }); if(!Object.keys(m.del[k]).length) delete m.del[k]; });
   Object.keys(m.notesDel||{}).forEach(dk=>{ if(m.notesDel[dk]<cut) delete m.notesDel[dk]; });
+  Object.keys(m.prefsDel||{}).forEach(k=>{ Object.keys(m.prefsDel[k]).forEach(id=>{ if(m.prefsDel[k][id]<cut) delete m.prefsDel[k][id]; }); if(!Object.keys(m.prefsDel[k]).length) delete m.prefsDel[k]; });
   return m;
 }
 /* content fingerprint of one entry, ignoring the bookkeeping field */
@@ -2074,6 +2167,39 @@ function trackChanges(k,v){
     });
     pm.forEach((p,id)=>{ if(!seen.has(id)) del[id]=now; });
     metaSet(gcMeta(m,now));
+  } else if(k===KEYS.prefs && v && typeof v==="object"){
+    /* one stamp per top-level setting, so changing the row order on one device
+       does not drag every other setting along with it */
+    /* A device saving prefs for the very first time has no previous copy, so
+       every key looks "just changed" and its untouched defaults would outrank
+       another device's real settings — a new phone would wipe the old one.
+       A first write records no stamps at all: this device has no opinion yet,
+       and an absent stamp loses to any stamp the other side has. */
+    const prevRaw=lsGet(k), firstWrite=!prevRaw;
+    const prev=prevRaw||{}, m=metaGet(), stamp=firstWrite?LEGACY_M:now;
+    Object.keys(v).forEach(pk=>{
+      if(PREFS_LOCAL.indexOf(pk)>=0) return;
+      if(PREFS_LISTS.indexOf(pk)>=0 && Array.isArray(v[pk])){
+        const pm=new Map();
+        (Array.isArray(prev[pk])?prev[pk]:[]).forEach(it=>{ if(it&&it.id!=null) pm.set(String(it.id),it); });
+        const del=m.prefsDel[pk]||(m.prefsDel[pk]={}), seen=new Set();
+        v[pk].forEach(it=>{
+          if(!it||typeof it!=="object"||it.id==null) return;
+          const id=String(it.id), pr=pm.get(id); seen.add(id);
+          if(!pr) it._m=stamp;
+          else if(entrySig(pr)!==entrySig(it)) it._m=stamp;
+          else if(!it._m) it._m=pr._m||LEGACY_M;
+          if(del[id]) delete del[id];
+        });
+        if(!firstWrite) pm.forEach((pr,id)=>{ if(!seen.has(id)) del[id]=now; });
+        if(!firstWrite) m.prefs[pk]=stamp;
+        return;
+      }
+      if(firstWrite) return;
+      if(JSON.stringify(prev[pk])!==JSON.stringify(v[pk])) m.prefs[pk]=stamp;
+      else if(!m.prefs[pk]) m.prefs[pk]=LEGACY_M;
+    });
+    metaSet(gcMeta(m,now));
   } else if(k===KEYS.dailynotes && v && typeof v==="object"){
     const prev=lsGet(k)||{}, m=metaGet();
     Object.keys(v).forEach(dk=>{
@@ -2095,6 +2221,17 @@ function stampLegacy(){
   });
   const dn=lsGet(KEYS.dailynotes), m=metaGet(); let t=false;
   if(dn&&typeof dn==="object") Object.keys(dn).forEach(dk=>{ if(!m.notes[dk]){ m.notes[dk]=LEGACY_M; t=true; } });
+  const pf=lsGet(KEYS.prefs);
+  if(pf&&typeof pf==="object"){
+    let pt=false;
+    Object.keys(pf).forEach(pk=>{
+      if(PREFS_LOCAL.indexOf(pk)>=0) return;
+      if(!m.prefs[pk]){ m.prefs[pk]=LEGACY_M; t=true; }
+      if(PREFS_LISTS.indexOf(pk)>=0 && Array.isArray(pf[pk]))
+        pf[pk].forEach(it=>{ if(it&&typeof it==="object"&&it.id!=null&&!it._m){ it._m=LEGACY_M; pt=true; } });
+    });
+    if(pt) lsSet(KEYS.prefs,pf);
+  }
   if(t) metaSet(m);
 }
 
@@ -2435,12 +2572,14 @@ const DriveSync=(function(){
   function applyLocal(o){ ALL_KEYS.forEach(k=>{ if(o[k]!==undefined && o[k]!==null) lsSet(k,o[k]); }); }
 
   function mergeMeta(a,b){
-    const m={del:{},notes:{},notesDel:{}};
+    const m={del:{},notes:{},notesDel:{},prefs:{},prefsDel:{}};
     [a,b].forEach(s=>{
       if(!s) return;
       Object.keys(s.del||{}).forEach(k=>{ m.del[k]=m.del[k]||{}; Object.keys(s.del[k]).forEach(id=>{ m.del[k][id]=Math.max(m.del[k][id]||0,s.del[k][id]||0); }); });
       Object.keys(s.notes||{}).forEach(dk=>{ m.notes[dk]=Math.max(m.notes[dk]||0,s.notes[dk]||0); });
       Object.keys(s.notesDel||{}).forEach(dk=>{ m.notesDel[dk]=Math.max(m.notesDel[dk]||0,s.notesDel[dk]||0); });
+      Object.keys(s.prefs||{}).forEach(pk=>{ m.prefs[pk]=Math.max(m.prefs[pk]||0,s.prefs[pk]||0); });
+      Object.keys(s.prefsDel||{}).forEach(k=>{ m.prefsDel[k]=m.prefsDel[k]||{}; Object.keys(s.prefsDel[k]).forEach(id=>{ m.prefsDel[k][id]=Math.max(m.prefsDel[k][id]||0,s.prefsDel[k][id]||0); }); });
     });
     return gcMeta(m,Date.now());
   }
@@ -2493,18 +2632,52 @@ const DriveSync=(function(){
     });
     return out;
   }
+  /* Settings merge key by key on their own stamps, so two devices changing
+     different settings both keep their change. Lists with ids union instead,
+     because losing one side's column would orphan the readings that point at
+     it. notif stays whatever this device has. */
+  function mergePrefsList(key,x,y,meta){
+    const del=(meta.prefsDel&&meta.prefsDel[key])||{};
+    const map=new Map(), noId=[];
+    const put=(it,winTies)=>{
+      if(!it||typeof it!=="object") return;
+      if(it.id==null){ noId.push(it); return; }
+      const id=String(it.id), cur=map.get(id);
+      if(!cur){ map.set(id,it); return; }
+      const ce=cur._m||0, ie=it._m||0;
+      if(winTies ? ie>=ce : ie>ce) map.set(id,it);
+    };
+    (Array.isArray(x)?x:[]).forEach(it=>put(it,false));
+    (Array.isArray(y)?y:[]).forEach(it=>put(it,true));
+    Object.keys(del).forEach(id=>{ const it=map.get(id); if(it && (it._m||0)<=del[id]) map.delete(id); });
+    return [...map.values(),...noId];
+  }
+  function mergePrefs(A,B,ma,mb,meta){                       // B is local, wins ties
+    const a=A||{}, b=B||{}, out={};
+    new Set([].concat(Object.keys(a),Object.keys(b))).forEach(pk=>{
+      if(PREFS_LOCAL.indexOf(pk)>=0){ out[pk]=(pk in b)?b[pk]:a[pk]; return; }
+      if(PREFS_LISTS.indexOf(pk)>=0){ out[pk]=mergePrefsList(pk,a[pk],b[pk],meta); return; }
+      const ta=(ma.prefs&&ma.prefs[pk])||0, tb=(mb.prefs&&mb.prefs[pk])||0;
+      if(!(pk in a)){ out[pk]=b[pk]; return; }
+      if(!(pk in b)){ out[pk]=a[pk]; return; }
+      out[pk]=(tb>=ta)?b[pk]:a[pk];
+    });
+    return out;
+  }
   function mergeData(a,b){                                   // b wins ties
     const ma=metaOf(a), mb=metaOf(b), meta=mergeMeta(ma,mb), out={};
     ARRAY_KEYS.forEach(k=>{ out[k]=mergeArr(k,a[k],b[k],meta); });
     out[KEYS.dailynotes]=mergeNotes(a[KEYS.dailynotes]||{},b[KEYS.dailynotes]||{},ma,mb,meta);
-    out[KEYS.prefs]=(b[KEYS.prefs]!=null)?b[KEYS.prefs]:a[KEYS.prefs];   // device settings: local wins
+    out[KEYS.prefs]=mergePrefs(a[KEYS.prefs],b[KEYS.prefs],ma,mb,meta);
     out[KEYS.meta]=meta;
     return out;
   }
   /* Real content fingerprint. The old signature only hashed entry ids, so
      editing an existing entry produced an identical hash and the change was
-     never uploaded. Prefs are deliberately excluded — they are per-device and
-     including them would make two devices overwrite each other forever. */
+     never uploaded. Shared prefs are in here now: while they were excluded, a
+     settings-only change never made the hash move and so was never uploaded at
+     all. notif is left out so this device's reminder times cannot start a
+     round trip. */
   const sortObj=(o)=>Object.keys(o||{}).sort().reduce((a,k)=>{a[k]=(o[k]&&typeof o[k]==="object")?sortObj(o[k]):o[k];return a;},{});
   function norm(o){
     if(!o) return "";
@@ -2517,7 +2690,10 @@ const DriveSync=(function(){
     const dn=o[KEYS.dailynotes]||{};
     parts._notes=Object.keys(dn).sort().map(k=>k+"="+JSON.stringify(dn[k]));
     const m=metaOf(o);
-    parts._del=JSON.stringify([sortObj(m.del),sortObj(m.notesDel)]);
+    const pf=o[KEYS.prefs]||{};
+    parts._prefs=JSON.stringify(sortObj(Object.keys(pf).filter(k=>PREFS_LOCAL.indexOf(k)<0)
+      .sort().reduce((acc,k)=>{acc[k]=pf[k];return acc;},{})));
+    parts._del=JSON.stringify([sortObj(m.del),sortObj(m.notesDel),sortObj(m.prefsDel)]);
     return JSON.stringify(parts);
   }
 
@@ -2732,7 +2908,7 @@ function mergeNotif(n){
     quiet:{from:hm(n.quiet&&n.quiet.from,d.quiet.from),to:hm(n.quiet&&n.quiet.to,d.quiet.to),
            doses:n.quiet?!!n.quiet.doses:d.quiet.doses}};
 }
-let PREFS={colvis:{meds:{},daily:{hr:false,temp:false,bs:false,o2:false,weight:false,pain:false,mood:false,sleep:false,bm:false,mobility:false},medlog:{},nutrition:{},feeds:{}},removedDaily:[],onceDaily:[],nutriMode:"both",customCols:[],medCols:[],medlogCols:[],nutriCols:[],feedCols:[],flushCols:[],feedsOn:false,flushGoal:0,flushGoals:{},wideNotes:false,dailyView:"grid",dailyRange:"7",entryRange:"3",medRange:"1",doseRange:"7",nutriRange:"7",feedRange:"7",cardOrder:["meds","vitals","feeds","nutrition"],cardsOn:{meds:true,vitals:true,feeds:true,nutrition:true},quickNutri:["food","volume","calories","protein","sugar","fat"],quickFeed:["route","food","units","volume","rate","start","end"],regimens:[],activeRegimen:null,treatmentOn:"auto",chartsOn:{},notif:defaultNotif()};
+let PREFS={colvis:{meds:{},daily:{hr:false,temp:false,bs:false,o2:false,weight:false,pain:false,mood:false,sleep:false,bm:false,mobility:false},medlog:{},nutrition:{},feeds:{}},removedDaily:[],onceDaily:[],dailyOrder:[],nutriMode:"both",customCols:[],medCols:[],medlogCols:[],nutriCols:[],feedCols:[],flushCols:[],feedsOn:false,flushGoal:0,flushGoals:{},wideNotes:false,dailyView:"grid",dailyRange:"7",entryRange:"3",medRange:"1",doseRange:"7",nutriRange:"7",feedRange:"7",cardOrder:["meds","vitals","feeds","nutrition"],cardsOn:{meds:true,vitals:true,feeds:true,nutrition:true},quickNutri:["food","volume","calories","protein","sugar","fat"],quickFeed:["route","food","units","volume","rate","start","end"],regimens:[],activeRegimen:null,treatmentOn:"auto",chartsOn:{},notif:defaultNotif()};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 async function savePrefs(){await storeSet(KEYS.prefs,PREFS);}
 
@@ -2742,6 +2918,92 @@ function nowTime(){const n=new Date();return pad(n.getHours())+":"+pad(n.getMinu
 function prettyDate(iso){if(!iso)return"—";const[y,m,d]=iso.split("-").map(Number);return new Date(y,m-1,d).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric",year:"numeric"});}
 function shortDate(iso){if(!iso)return"—";const[y,m,d]=iso.split("-").map(Number);return new Date(y,m-1,d).toLocaleDateString(undefined,{month:"short",day:"numeric"});}
 function weekdayLabel(iso){if(!iso)return"—";const[y,m,d]=iso.split("-").map(Number);return new Date(y,m-1,d).toLocaleDateString(undefined,{weekday:"short",month:"short",day:"numeric"});}
+/* ---- typed time fields -------------------------------------------------
+   <input type="time"> is a spinner on desktop and a scroll wheel on a phone,
+   which is slow when you already know the time you want. These fields are
+   plain text: type 830, 8:30, 830p, 20:30, "8 pm" — whatever is quickest — and
+   they settle into a proper time when you leave the box. The clock button
+   still opens the native picker for anyone who prefers it.
+   The canonical HH:MM lives in a hidden input carrying the field's real id, so
+   every existing reader of that id keeps working unchanged. */
+function parseTimeInput(raw,fallback){
+  let x=String(raw||"").trim().toLowerCase();
+  if(!x)return "";
+  let pm=null;
+  if(/(^|[^a-z])p\.?m?\.?$/.test(x)||/\bpm\b/.test(x)){pm=true;}
+  else if(/(^|[^a-z])a\.?m?\.?$/.test(x)||/\bam\b/.test(x)){pm=false;}
+  x=x.replace(/[^0-9:.]/g,"").replace(/\./g,":");
+  if(!x)return fallback||"";
+  let h,m;
+  if(x.includes(":")){
+    const [a,b]=x.split(":");
+    h=parseInt(a,10); m=parseInt(b||"0",10);
+  }else if(x.length<=2){
+    h=parseInt(x,10); m=0;
+  }else{
+    /* 830 -> 8:30, 1245 -> 12:45; the minutes are always the last two digits */
+    h=parseInt(x.slice(0,x.length-2),10); m=parseInt(x.slice(-2),10);
+  }
+  if(!isFinite(h)||!isFinite(m))return fallback||"";
+  if(m>59)return fallback||"";
+  if(pm===true&&h<12)h+=12;
+  if(pm===false&&h===12)h=0;
+  /* No guessing at am/pm when the entry does not say. In a dose log a wrong
+     guess moves a dose by twelve hours, and "5" is read as 05:00 rather than
+     inferred — type 5p or 17 for the evening. The box shows the result the
+     moment you leave it, so a mistake is visible immediately. */
+  if(h>23)return fallback||"";
+  return pad(h)+":"+pad(m);
+}
+function timeFieldHTML(id,value,opts){
+  const o=opts||{};
+  const v=value||"";
+  return `<span class="tfield${o.cls?" "+o.cls:""}">
+    <input type="hidden" id="${id}" value="${esc(v)}">
+    <input type="text" class="tf-txt" id="${id}__t" value="${esc(v?timePretty(v):"")}"
+      placeholder="${esc(o.placeholder||"8:30 AM")}" inputmode="numeric" autocomplete="off"
+      ${o.title?`title="${esc(o.title)}"`:""} ${o.aria?`aria-label="${esc(o.aria)}"`:""}
+      onblur="commitTimeField('${id}')" onkeydown="timeFieldKey(event,'${id}')">
+    <button type="button" class="tf-pick" tabindex="-1" title="Pick a time"
+      onclick="openTimePicker('${id}')">${ICO.clockSm}</button>
+    <input type="time" class="tf-native" id="${id}__n" tabindex="-1" aria-hidden="true" value="${esc(v)}"
+      onchange="setTimeField('${id}',this.value)">
+  </span>`;
+}
+function setTimeField(id,hhmm){
+  const hid=document.getElementById(id),txt=document.getElementById(id+"__t"),nat=document.getElementById(id+"__n");
+  if(!hid)return;
+  hid.value=hhmm||"";
+  if(txt)txt.value=hhmm?timePretty(hhmm):"";
+  if(nat)nat.value=hhmm||"";
+  hid.dispatchEvent(new Event("input",{bubbles:true}));
+  hid.dispatchEvent(new Event("change",{bubbles:true}));
+}
+function commitTimeField(id){
+  const hid=document.getElementById(id),txt=document.getElementById(id+"__t");
+  if(!hid||!txt)return;
+  setTimeField(id,parseTimeInput(txt.value,hid.value));
+}
+function timeFieldKey(e,id){
+  if(e.key==="Enter"){commitTimeField(id);}
+  /* arrows nudge by five minutes, the one thing the native spinner was good for */
+  if(e.key==="ArrowUp"||e.key==="ArrowDown"){
+    e.preventDefault();
+    const cur=parseTimeInput(document.getElementById(id+"__t").value,document.getElementById(id).value);
+    if(!cur)return;
+    const [h,m]=cur.split(":").map(Number);
+    let t=h*60+m+(e.key==="ArrowUp"?5:-5);
+    t=((t%1440)+1440)%1440;
+    setTimeField(id,pad(Math.floor(t/60))+":"+pad(t%60));
+  }
+}
+function openTimePicker(id){
+  const nat=document.getElementById(id+"__n");
+  if(!nat)return;
+  if(nat.showPicker){try{nat.showPicker();return;}catch(err){}}
+  nat.focus();nat.click();
+}
+function focusTimeField(id){const t=document.getElementById(id+"__t");if(t){t.focus();t.select();}}
 function timePretty(t){if(!t)return"";const[h,m]=t.split(":").map(Number);const ap=h<12?"AM":"PM";let hr=h%12;if(hr===0)hr=12;return hr+":"+pad(m)+" "+ap;}
 function to12h(h){const ap=h<12?"AM":"PM";let hr=h%12;if(hr===0)hr=12;return hr+" "+ap;}
 function parseScheduledHours(str){if(!str)return new Set();const hours=new Set();const re=/(\d{1,2})(?::(\d{2}))?\s*(am|pm|a\.m\.|p\.m\.)?/gi;let m;
@@ -2801,6 +3063,9 @@ function recentTimes(){const n=new Date();let h=n.getHours();let m=n.getMinutes(
 function commonTimes(medId){const c={};MEDLOG.filter(e=>e.medId===medId).forEach(e=>(e.times||[]).forEach(t=>c[t]=(c[t]||0)+1));return Object.keys(c).sort((a,b)=>c[b]-c[a]).slice(0,5);}
 
 const ICO={
+  clockSm:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" style="width:15px;height:15px"><circle cx="12" cy="12" r="8.5"/><path d="M12 7.5V12l3 1.8"/></svg>',
+  mvUp:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M6 14l6-6 6 6"/></svg>',
+  mvDown:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="width:13px;height:13px"><path d="M6 10l6 6 6-6"/></svg>',
   clockRail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><polyline points="12 7 12 12 15.5 14"/></svg>',
   sunRail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M18.7 5.3l-1.4 1.4M6.7 17.3l-1.4 1.4"/></svg>',
   edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.12 2.12 0 0 1 3 3L12 15l-4 1 1-4Z"/></svg>',
@@ -2913,7 +3178,40 @@ function ynSet(cb){
   h.dispatchEvent(new Event("change"));
 }
 function customAsCols(){return PREFS.customCols.map(c=>({key:"c_"+c.id,label:c.label,type:c.type,options:c.options||[],custom:true,cid:c.id}));}
-function allDailyCols(){const gone=PREFS.removedDaily||[];return DAILY_COLS.filter(c=>!gone.includes(c.key)).concat(customAsCols());}
+/* Row order lives in one place. Everything that lists daily rows — the grid,
+   the by-day table, the Home card's quick fields, Summary and the exports —
+   reads through allDailyCols(), so arranging them once arranges them
+   everywhere. Date is pinned first; it is the row's identity, not a reading. */
+function orderDailyCols(list){
+  const o=PREFS.dailyOrder||[];
+  if(!o.length)return list;
+  /* a key absent from the saved order is new — it keeps its natural position at
+     the end rather than jumping to the front */
+  const rank=c=>{const i=o.indexOf(c.key);return i<0?o.length+list.indexOf(c):i;};
+  return list.slice().sort((x,y)=>rank(x)-rank(y));
+}
+function allDailyCols(){
+  const gone=PREFS.removedDaily||[];
+  const nat=DAILY_COLS.filter(c=>!gone.includes(c.key)).concat(customAsCols());
+  return nat.filter(c=>c.key==="date").concat(orderDailyCols(nat.filter(c=>c.key!=="date")));
+}
+/* A press swaps the row with its neighbour IN THE SAME BAND. The grid and the
+   Home card both split rows into hourly and once-a-day groups, so stepping past
+   a row from the other band would rewrite the stored order and move nothing on
+   screen. Same shape as moveCard(). */
+async function moveDailyRow(key,dir){
+  const rows=allDailyCols().filter(c=>c.key!=="date");
+  const col=rows.find(c=>c.key===key);if(!col)return;
+  const band=rows.filter(c=>isOnce(c)===isOnce(col)).map(c=>c.key);
+  const i=band.indexOf(key),j=i+dir;
+  if(i<0||j<0||j>=band.length)return;
+  const keys=rows.map(c=>c.key);
+  const a=keys.indexOf(key),b=keys.indexOf(band[j]);
+  keys[a]=band[j];keys[b]=key;
+  PREFS.dailyOrder=keys;
+  await savePrefs();
+  renderCustomList();afterColChange();
+}
 function visibleDailyCols(){return allDailyCols().filter(c=>PREFS.colvis.daily[c.key]!==false);}
 function getVal(e,col){ if(col.custom) return (e.custom||{})[col.cid]; return e[col.key]; }
 function setValObj(obj,col,val){ if(col.custom){obj.custom=obj.custom||{};obj.custom[col.cid]=val;} else obj[col.key]=val; }
@@ -3043,7 +3341,10 @@ const TAB_ICO={
   treat:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6v4l4 10a3 3 0 0 1-2.8 4H7.8A3 3 0 0 1 5 17L9 7Z"/><path d="M7 14h10"/></svg>',
   summary:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 8h8M8 12h8M8 16h5"/></svg>',
   charts:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg>',
-  more:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>'};
+  more:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="5" cy="12" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="19" cy="12" r="1.4"/></svg>',
+  settings:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3.1"/><path d="M19.4 15a1.6 1.6 0 0 0 .32 1.77l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.6 1.6 0 0 0-1.77-.32 1.6 1.6 0 0 0-.97 1.47V21a2 2 0 1 1-4 0v-.11a1.6 1.6 0 0 0-1.05-1.46 1.6 1.6 0 0 0-1.77.32l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.6 1.6 0 0 0 .32-1.77 1.6 1.6 0 0 0-1.47-.97H3a2 2 0 1 1 0-4h.11A1.6 1.6 0 0 0 4.6 8.98a1.6 1.6 0 0 0-.33-1.77l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.6 1.6 0 0 0 1.77.32H9a1.6 1.6 0 0 0 .97-1.47V3a2 2 0 1 1 4 0v.11a1.6 1.6 0 0 0 .97 1.47 1.6 1.6 0 0 0 1.77-.32l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.6 1.6 0 0 0-.32 1.77V9a1.6 1.6 0 0 0 1.47.97H21a2 2 0 1 1 0 4h-.11a1.6 1.6 0 0 0-1.47.97z"/></svg>',
+  export:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12"/><path d="M7.5 10.5 12 15l4.5-4.5"/><path d="M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17"/></svg>',
+  import:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 15V3"/><path d="M7.5 7.5 12 3l4.5 4.5"/><path d="M4 17v2.5A1.5 1.5 0 0 0 5.5 21h13a1.5 1.5 0 0 0 1.5-1.5V17"/></svg>'};
 /* The Treatment tab is only meaningful to someone tracking an infusion regimen,
    so by default it shows itself once there is one and stays out of the way
    otherwise. "on"/"off" in prefs is an explicit override from the More menu;
@@ -3076,6 +3377,12 @@ function tabShort(t){
   return m==="both"?"Nutrition":NUTRI_MODES[m].title;
 }
 let activeTab="home";
+/* the same three the phone's More menu offers, in the same order */
+const RAIL_ACTIONS=[
+  {k:"settings",label:"Settings",short:"Settings",fn:"openSettings()"},
+  {k:"export",label:"Export to Excel",short:"Export",fn:"exportExcel()"},
+  {k:"import",label:"Import vitals",short:"Import",fn:"openImport()"}
+];
 function hideAllMenus(){document.querySelectorAll(".menu.open").forEach(m=>m.classList.remove("open"));}
 function renderTabs(){
   const avail=visibleTabs();
@@ -3087,6 +3394,14 @@ function renderTabs(){
   const bar=document.getElementById("tabBar");
   if(bar)bar.innerHTML=avail.map(t=>
     `<button class="rail-btn${t.k===activeTab?" on":""}" onclick="switchTab('${t.k}')" title="${lbl(t)}" aria-label="${lbl(t)}"${t.k===activeTab?' aria-current="page"':""}>${ico(t.k)}<span class="rl-lbl">${esc(tabShort(t))}</span></button>`).join("");
+
+  /* Settings, export and import used to live only in the phone bar's overflow
+     menu, which leaves them unreachable on desktop — the rail rendered sections
+     and nothing else. They sit at the foot of the rail instead of behind a
+     menu: there is room for them, and they read better labelled than hidden. */
+  const foot=document.getElementById("railFoot");
+  if(foot)foot.innerHTML=RAIL_ACTIONS.map(a=>
+    `<button class="rail-btn rail-act" onclick="${a.fn}" title="${esc(a.label)}" aria-label="${esc(a.label)}">${ico(a.k)}<span class="rl-lbl">${esc(a.short)}</span></button>`).join("");
 
   /* phone bar: four fixed sections plus an overflow holding the rest, the
      appearance toggle, sync when it is connected, settings and export */
@@ -3125,7 +3440,7 @@ function switchTab(name){
   if(name==="summary")renderSummary();
   if(name==="nutrition"){renderNutrition();renderFeeds();}
   if(name==="charts")renderCharts();
-  if(name==="treat")renderTreat();
+  if(name==="treat"){renderTreat();requestAnimationFrame(scrollTreatToLatest);}
 }
 
 function buildColMenu(menuEl,tableKey,cols,title){
@@ -3679,7 +3994,7 @@ function openCell(date,colKey,hour,entryId){
   }
   document.getElementById("cellModalBody").innerHTML=`
     <div class="dose-modal-sub" style="margin-bottom:14px">${prettyDate(date)} · ${to12h(hour)} hour</div>
-    <div class="form-grid"><div class="field"><label>Time</label><input type="time" id="cl_time" value="${t}"></div></div>
+    <div class="form-grid"><div class="field"><label>Time</label>${timeFieldHTML("cl_time",t,{aria:"Time"})}</div></div>
     <div style="margin-top:12px">${field}</div>
     <div class="field" style="margin-top:12px"><label>Notes — ${esc(col.label)}, ${shortDate(date)}</label>
       <textarea id="cl_note" placeholder="Notes for this item on this day">${esc(DGNOTES[dgKey(date,colKey)]||"")}</textarea>
@@ -3907,7 +4222,7 @@ function fieldHTML(col,e,prefix){
   let input="";
   if(col.type==="textarea")input=`<textarea id="${id}">${esc(v)}</textarea>`;
   else if(col.type==="date")input=`<input type="date" id="${id}" value="${esc(v)}">`;
-  else if(col.type==="time")input=`<input type="time" id="${id}" value="${esc(v)}">`;
+  else if(col.type==="time")input=timeFieldHTML(id,v,{aria:col.label});
   else if(col.type==="number")input=`<input type="number" ${col.step?`step="${col.step}"`:""} id="${id}" value="${esc(v)}">`;
   else if(isYesNo(col))input=ynHTML(id,v);
   else if(col.type==="select"||col.type==="yesno"){const opts=col.type==="yesno"?["Yes","No"]:(col.options||[]);input=`<select id="${id}"><option value="">—</option>${opts.map(o=>`<option ${String(v)===o?"selected":""}>${esc(o)}</option>`).join("")}</select>`;}
@@ -4112,6 +4427,47 @@ function liveSession(date){
   return FEEDS.filter(e=>e.date===d&&e.start&&!e.end)
     .sort((a,b)=>(b.start||"").localeCompare(a.start||""))[0]||null;
 }
+/* Flushes are stored inside FEEDS records, so a flush logged on a day with
+   nothing running still needs a row to live in. That row is a holder, not a
+   feeding session: it has no times and no formula, and nothing should count or
+   draw it as one. A row earns "session" by carrying something about the feed
+   itself. */
+const FEED_SESSION_KEYS=["start","end","route","food","units","volume","rate","calories","protein","sugar","notes"];
+function isFeedSession(e){
+  if(!e)return false;
+  const has=v=>v!==undefined&&v!==null&&String(v).trim()!=="";
+  if(FEED_SESSION_KEYS.some(k=>has(e[k])))return true;
+  return feedCustomCols().some(c=>has(getVal(e,c)));
+}
+function daySessions(date){return FEEDS.filter(e=>e.date===date&&isFeedSession(e));}
+/* Older data has flushes stored on whichever session happened to be open when
+   they were logged, so one date could hold two "Flush 1"s and deleting a
+   session took its flushes with it. This moves every flush onto the date's own
+   row, in time order, once. Nothing is discarded: a column collision just takes
+   the next free column, and a new one is added if they all fill up. */
+async function consolidateFlushes(){
+  const dates=[...new Set(FEEDS.filter(e=>isFeedSession(e)&&Object.keys(e.flushes||{}).length).map(e=>e.date))];
+  if(!dates.length)return false;
+  PREFS.flushCols=PREFS.flushCols||[];
+  let grew=false;
+  dates.forEach(d=>{
+    const loose=[];
+    FEEDS.filter(e=>e.date===d&&isFeedSession(e)).forEach(e=>{
+      Object.keys(e.flushes||{}).forEach(fid=>{loose.push(e.flushes[fid]);});
+      e.flushes={};
+    });
+    const h=flushHolder(d,true);
+    h.flushes=h.flushes||{};
+    loose.sort((a,b)=>String(a.t||"").localeCompare(String(b.t||""))).forEach(fv=>{
+      let col=PREFS.flushCols.find(c=>{const x=h.flushes[c.id];return !x||(!x.t&&!x.v);});
+      if(!col){col={id:uid(),label:"Flush "+(PREFS.flushCols.length+1)};PREFS.flushCols.push(col);grew=true;}
+      h.flushes[col.id]=fv;
+    });
+  });
+  await storeSet(KEYS.feeds,FEEDS);
+  if(grew)await savePrefs();
+  return true;
+}
 function elapsedSince(hhmm){
   if(!hhmm)return"";
   const[h,m]=hhmm.split(":").map(Number);const n=new Date();
@@ -4145,6 +4501,7 @@ function renderFeedsByDay(inRange,wrap){
   let body="";
   dates.forEach(d=>{
     const list=groups[d];
+    const sessN=list.filter(isFeedSession).length;
     const cells=base.map((c,i)=>{
       let inner;
       if(c.key==="date")inner=`<span class="num">${shortDate(d)}</span>`;
@@ -4158,35 +4515,35 @@ function renderFeedsByDay(inRange,wrap){
         const j=joinUniq(list.map(e=>getFeedVal(e,c)).filter(v=>v!==undefined&&v!==null&&v!==""));
         inner=j?`<span class="txt">${esc(j)}</span>`:"—";
       }
-      if(i===0)return`<td>${inner}${list.length>1?`<span class="exp-count">${list.length}</span>`:""}</td>`;
+      if(i===0)return`<td>${inner}${sessN>1?`<span class="exp-count">${sessN}</span>`:""}</td>`;
       return`<td>${inner}</td>`;
     }).join("");
     // every session for the day on one line, scrolling sideways inside its cell
-    const times=`<td><div class="sess-scroll">${list.map((e,i)=>`<button class="sess-chip${e.start&&!e.end?" live":""}" onclick="openFeed('${e.id}')" title="Session ${i+1} — tap to edit">
+    const sess=list.filter(isFeedSession);
+    const times=sess.length?`<td><div class="sess-scroll">${sess.map((e,i)=>`<button class="sess-chip${e.start&&!e.end?" live":""}" onclick="openFeed('${e.id}')" title="Session ${i+1} — tap to edit">
         <span class="sc-n">${i+1}</span>
         <span class="sc-t">${e.start?timePretty(e.start):"—"} – ${e.end?timePretty(e.end):"open"}</span>
         ${feedDuration(e)?`<span class="sc-d">${feedDuration(e)}</span>`:""}
-      </button>`).join("")}</div></td>`;
+      </button>`).join("")}</div></td>`:`<td class="sess-none">—</td>`;
     const fl=dayFlushes(d);
     const flCell=fl.length?`<div class="flush-cell scrollx">${fl.map(f=>`<span class="flush-time">${f.t?timePretty(f.t):"—"}${f.v?" · "+f.v:""}</span>`).join("")}</div>`:"—";
     const flTot=list.reduce((s,e)=>s+flushTotal(e),0);
     const act=list.length===1
       ? `<button class="icon-btn" onclick="openFeed('${list[0].id}')" title="Edit">${ICO.edit}</button><button class="icon-btn del" onclick="deleteFeed('${list[0].id}')" title="Delete">${ICO.del}</button>`
-      : `<button class="icon-btn del" onclick="deleteFeedDay('${d}')" title="Delete all sessions this day">${ICO.del}</button>`;
+      : `<button class="icon-btn del" onclick="deleteFeedDay('${d}')" title="Delete everything logged this day">${ICO.del}</button>`;
     body+=`<tr>${cells}${times}<td>${flCell}</td><td class="num cell-strong">${flTot?rnd(flTot,1):"—"}</td><td class="actions">${act}</td></tr>`;
   });
   wrap.innerHTML=`<table class="compact"><thead><tr>${head}</tr></thead><tbody>${body}</tbody></table>`;
 }
 async function deleteFeedDay(date){
-  const n=FEEDS.filter(e=>e.date===date).length;
-  if(!await askConfirm(`Delete all ${n} sessions for ${prettyDate(date)}?`))return;
+  if(!await askConfirm(`Delete everything logged for ${prettyDate(date)} — sessions and flushes?`))return;
   FEEDS=FEEDS.filter(e=>e.date!==date);await storeSet(KEYS.feeds,FEEDS);renderFeeds();renderQuickFeed();toast("Day deleted");
 }
 let editingFeedId=null,autoFilled={};
 function openFeed(id){
   editingFeedId=id||null;autoFilled={};
   const e=id?FEEDS.find(x=>x.id===id):null;
-  document.getElementById("feedModalTitle").textContent=id?"Edit feeding session":"Add feeding session";
+  document.getElementById("feedModalTitle").textContent=id?((e&&!isFeedSession(e))?"Edit the day's flushes":"Edit feeding session"):"Add feeding session";
   const wd=(typeof homeDate==="function"?homeDate():todayISO());
   const base=e||{date:wd,start:wd===todayISO()?nowTime():""};
   const dataCols=FEED_COLS.concat(feedCustomCols());
@@ -4198,8 +4555,11 @@ function openFeed(id){
   window.__presets=presets;
   // flush time + volume
   const fl=flushCols();
+  /* flushes belong to the date, so this section always shows the day's row —
+     open any session for that date and you are editing the same set */
+  const fbase=flushHolder(base.date,false)||{};
   document.getElementById("feedFlushWrap").innerHTML=fl.length
-    ? `<div class="dm-section"><div class="dm-lab">Flushes</div><div class="form-grid">${fl.map(c=>{const fv=flushVal(base,c.fid);return`<div class="field"><label>${esc(c.label)}</label><div class="form-grid" style="gap:8px"><input type="time" id="fd_f_${c.fid}" value="${esc(fv.t)}" title="Time"><input type="number" min="0" step="1" id="fd_fv_${c.fid}" value="${esc(fv.v)}" placeholder="mL" title="Volume in mL" oninput="updateFlushPreview()"></div></div>`;}).join("")}</div><div class="rate-hint" id="flushPreview" style="display:none"></div><div class="hint">Add or remove flush columns with the “Flush column” button.</div></div>`
+    ? `<div class="dm-section"><div class="dm-lab">Flushes <span style="font-weight:400;text-transform:none;letter-spacing:0">— for the whole day</span></div><div class="form-grid">${fl.map(c=>{const fv=flushVal(fbase,c.fid);return`<div class="field"><label>${esc(c.label)}</label><div class="form-grid" style="gap:8px">${timeFieldHTML("fd_f_"+c.fid,fv.t,{title:"Time",aria:c.label+" time"})}<input type="number" min="0" step="1" id="fd_fv_${c.fid}" value="${esc(fv.v)}" placeholder="mL" title="Volume in mL" oninput="updateFlushPreview()"></div></div>`;}).join("")}</div><div class="rate-hint" id="flushPreview" style="display:none"></div><div class="hint">These are the day's flushes, not this session's. Add or remove flush columns with the “Flush column” button.</div></div>`
     : `<div class="dm-section"><div class="hint" style="margin:0">No flush columns yet — use the “Flush column” button to add one.</div></div>`;
   document.getElementById("deleteFeedBtn").style.display=id?"inline-flex":"none";
   showModal("feedModal");
@@ -4258,17 +4618,26 @@ async function saveFeedFn(){
   const obj=editingFeedId?{...FEEDS.find(x=>x.id===editingFeedId)}:{id:uid(),custom:{},flushes:{}};
   obj.custom=obj.custom?{...obj.custom}:{};obj.flushes=obj.flushes?{...obj.flushes}:{};
   FEED_COLS.concat(feedCustomCols()).forEach(c=>setFeedVal(obj,c,gv("fd_"+(c.custom?("c_"+c.cid):c.key))));
-  flushCols().forEach(c=>{
-    const t=gv("fd_f_"+c.fid),v=gv("fd_fv_"+c.fid);
-    if(t||v)obj.flushes[c.fid]={t,v};else delete obj.flushes[c.fid];
-  });
   if(!obj.date){toast("Pick a date first");return;}
   if(editingFeedId)FEEDS=FEEDS.map(x=>x.id===editingFeedId?obj:x);else FEEDS.push(obj);
+  /* the flush fields belong to the date, so they are written to the day's flush
+     row rather than to the record being edited */
+  const fvals=flushCols().map(c=>({fid:c.fid,t:gv("fd_f_"+c.fid),v:gv("fd_fv_"+c.fid)}));
+  if(fvals.some(f=>f.t||f.v)||flushHolder(obj.date,false)){
+    const h=isFeedSession(obj)?flushHolder(obj.date,true):obj;
+    h.flushes=h.flushes?{...h.flushes}:{};
+    fvals.forEach(f=>{if(f.t||f.v)h.flushes[f.fid]={t:f.t,v:f.v};else delete h.flushes[f.fid];});
+  }
+  pruneEmptyFeedRows();
   await storeSet(KEYS.feeds,FEEDS);hideModal("feedModal");renderFeeds();renderQuickFeed();
   const sameDay=obj.date===(typeof homeDate==="function"?homeDate():todayISO());
   toast((editingFeedId?"Session updated":"Session saved")+(sameDay?"":" · "+shortDate(obj.date)));
 }
-async function deleteFeed(id){if(!await askConfirm("Delete this feeding session?"))return;FEEDS=FEEDS.filter(x=>x.id!==id);await storeSet(KEYS.feeds,FEEDS);renderFeeds();renderQuickFeed();toast("Session deleted");}
+async function deleteFeed(id){
+  const e=FEEDS.find(x=>x.id===id),sess=isFeedSession(e);
+  if(!await askConfirm(sess?"Delete this feeding session?":"Delete the flushes logged on their own this day?"))return;
+  FEEDS=FEEDS.filter(x=>x.id!==id);await storeSet(KEYS.feeds,FEEDS);renderFeeds();renderQuickFeed();
+  toast(sess?"Session deleted":"Flushes deleted");}
 
 /* flush column management */
 async function addFlushCol(){
@@ -4309,7 +4678,7 @@ const COLS_TARGETS={
   medlog:{list:()=>PREFS.medlogCols,data:()=>MEDLOG,key:()=>KEYS.medlog,title:"Medication Log columns",
          hint:"Add your own fields to the logged-dose table — who gave it, side effects, anything you want per dose. Fill them in directly in the table. Use the <b>Columns</b> menu to hide any built-in column you don't need."},
   daily:{list:()=>PREFS.customCols,data:()=>DAILY,key:()=>KEYS.daily,title:"Daily Log rows",
-         hint:"Add your own rows to the Daily Log. They'll appear in the grid, the entry form, the Home quick-log, and Excel exports. Use the <b>Rows</b> menu to hide any you don't need, or delete a built-in row below."},
+         hint:"Every row on the Daily Log, in the order it appears. The arrows arrange them, and that order carries to the grid, the entry form, the Home quick-log and Excel exports. Use the <b>Rows</b> menu to hide any you don't need."},
   nutrition:{list:()=>PREFS.nutriCols,data:()=>NUTRITION,key:()=>KEYS.nutrition,title:"Nutrition columns",
          hint:"Add your own fields to the Nutrition table. They'll appear in the entry form, the table and Excel exports. Use the <b>Columns</b> menu to hide any built-in column you don't need."},
   feeds:{list:()=>PREFS.feedCols,data:()=>FEEDS,key:()=>KEYS.feeds,title:"Feeds columns",
@@ -4344,15 +4713,36 @@ function renderCustomList(){
   const wrap=document.getElementById("customColList");
   const list=COLS_TARGETS[colsTarget].list()||[];
   let html="";
-  // built-in rows can be deleted outright on the Daily Log
+  /* One list rather than "built-in" and "yours" in separate blocks: the order
+     it shows is the order the rows appear in, and a split list could not
+     express a custom row sitting above a built-in one. */
+  /* Grouped the way the Daily Log itself groups them, and in the same order, so
+     "where it sits here" and "where it sits there" are the same question.
+     Built-in and custom rows sit together: a split by origin could not express
+     a custom row above a built-in one, which is the whole point of arranging. */
   if(colsTarget==="daily"){
     const gone=PREFS.removedDaily||[];
-    const builtin=DAILY_COLS.filter(c=>c.key!=="date"&&!gone.includes(c.key));
-    html+=`<div class="dm-lab" style="margin-bottom:8px">Built-in rows</div>`;
-    html+=builtin.length?builtin.map(c=>`<div class="custom-col-item"><div><div class="cc-name">${esc(c.label)}</div><div class="cc-type">Built-in</div></div><div style="display:flex;align-items:center;flex:0 0 auto">${whenToggle(c.key)}<button class="icon-btn del" onclick="deleteBuiltinCol('${c.key}')" title="Delete row">${ICO.del}</button></div></div>`).join("")
-      :`<p class="hint" style="margin:0 0 8px">All built-in rows removed.</p>`;
+    const rows=allDailyCols().filter(c=>c.key!=="date");
+    const typeLabel=c=>c.custom
+      ?({number:"Number",text:"Text",yesno:"Yes / No",select:"Choices",time:"Time"}[c.type]||c.type)+(c.options&&c.options.length?" · "+c.options.map(esc).join(", "):"")
+      :"Built-in";
+    const band=(label,list)=>{
+      if(!list.length)return"";
+      return`<div class="dm-lab" style="margin-bottom:8px">${label}</div>`+list.map((c,i)=>{
+        const del=c.custom?`deleteCustomCol('${c.cid}')`:`deleteBuiltinCol('${c.key}')`;
+        return`<div class="custom-col-item">
+          <span class="mv-grp mv-col"><button class="mv-btn" ${i===0?"disabled":""} onclick="moveDailyRow('${c.key}',-1)" title="Move up" aria-label="Move ${esc(c.label)} up">${ICO.mvUp}</button><button class="mv-btn" ${i===list.length-1?"disabled":""} onclick="moveDailyRow('${c.key}',1)" title="Move down" aria-label="Move ${esc(c.label)} down">${ICO.mvDown}</button></span>
+          <div style="flex:1;min-width:0"><div class="cc-name">${esc(c.label)}</div><div class="cc-type">${typeLabel(c)}</div></div>
+          <div style="display:flex;align-items:center;flex:0 0 auto">${whenToggle(c.key)}<button class="icon-btn del" onclick="${del}" title="Delete row">${ICO.del}</button></div></div>`;
+      }).join("");
+    };
+    const hourly=rows.filter(c=>!isOnce(c)),once=rows.filter(c=>isOnce(c));
+    html+=band("By hour",hourly);
+    if(hourly.length&&once.length)html+=`<div style="height:1px;background:var(--line-soft);margin:14px 0"></div>`;
+    html+=band("Once a day",once);
+    if(!rows.length)html+=`<p class="hint" style="margin:0 0 8px">All rows removed.</p>`;
     if(gone.length)html+=`<div class="hint" style="margin:8px 0 0">Removed: ${gone.map(k=>{const c=DAILY_COLS.find(x=>x.key===k);return`<button class="mpreset" style="display:inline;width:auto;padding:2px 7px" onclick="restoreBuiltinCol('${k}')">${esc(c?c.label:k)} ↩</button>`;}).join(" ")}</div>`;
-    html+=`<div style="height:1px;background:var(--line-soft);margin:14px 0"></div><div class="dm-lab" style="margin-bottom:8px">Your rows</div>`;
+    wrap.innerHTML=html;return;
   }
   html+=list.length
     ? list.map(c=>{const tl={number:"Number",text:"Text",yesno:"Yes / No",select:"Choices",time:"Time"}[c.type]||c.type;return`<div class="custom-col-item"><div><div class="cc-name">${esc(c.label)}</div><div class="cc-type">${tl}${c.options&&c.options.length?" · "+c.options.map(esc).join(", "):""}</div></div><div style="display:flex;align-items:center;flex:0 0 auto">${colsTarget==="daily"?whenToggle("c_"+c.id):""}<button class="icon-btn del" onclick="deleteCustomCol('${c.id}')" title="Delete">${ICO.del}</button></div></div>`;}).join("")
@@ -4548,7 +4938,7 @@ function openDoseModal(medId,date,hour){
     <div class="dose-modal-sub">${esc(m.dosage||"")}${m.description?" · "+esc(m.description):""}</div>
     <div class="dose-modal-sub">${prettyDate(doseDate)}</div>
     <div class="dm-section"><div class="dm-lab">Time given</div>
-      <input type="time" id="dm_time" value="${defTime}" style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:9px">
+      ${timeFieldHTML("dm_time",defTime,{cls:"tf-lg",aria:"Time given"})}
       <div class="hint">${hint}</div>
     </div>
     ${existingHTML}
@@ -4556,10 +4946,10 @@ function openDoseModal(medId,date,hour){
     ${chipRow("Most common times",s.common)}
   `;
   showModal("doseModal");
-  setTimeout(()=>{const el=document.getElementById("dm_time");if(el)el.focus();},60);
+  setTimeout(()=>focusTimeField("dm_time"),60);
 }
 function pickDoseTime(t){
-  const el=document.getElementById("dm_time");if(el)el.value=t;
+  setTimeField("dm_time",t);
   document.querySelectorAll("#doseModalBody .dm-chip").forEach(c=>c.classList.toggle("sel",c.dataset.time===t));
 }
 async function saveDoseFn(){
@@ -4581,11 +4971,14 @@ function quickFieldCols(){return visibleDailyCols().filter(c=>c.key!=="date"&&c.
    logged by hour carry their own time box, defaulting to now, so a reading taken
    earlier can be filed at the hour it happened. Once-a-day rows have no time.
    Yes/No rows are the whole chip: tap for yes, tap again to clear. */
+/* Defers to isYesNo() rather than re-testing the options, so a row that reads
+   as yes/no on the Daily Log reads the same way here. This used to require
+   type==="select", which meant the built-in Bowel movement row got the toggle
+   but a custom row created as "Yes / No" fell through to a plain text box. */
 function ynOptions(c){
-  if(c.type!=="select")return null;
-  const o=(c.options||[]).map(x=>String(x).trim());
-  const low=o.map(x=>x.toLowerCase()).sort();
-  return (low.length===2&&low[0]==="no"&&low[1]==="yes")?o:null;
+  if(!isYesNo(c))return null;
+  if(c.type==="yesno")return ["Yes","No"];
+  return (c.options||[]).map(x=>String(x).trim());
 }
 /* NOTE: named apart from latestFor() above — that one returns {v,t} for the
    Daily Log grid, this one returns the whole entry. Sharing the name meant this
@@ -4599,6 +4992,45 @@ function allFor(day,c){
             .map(x=>({v:getVal(x,c),t:x.time||""}));
 }
 function chipFieldId(c){return "hv_"+(c.custom?("c_"+c.cid):c.key);}
+/* Resting width of a free-text pill: as wide as its content, floored so an empty
+   one is still a target and capped so one long note cannot push the rest of the
+   card off the row. Measured in the field's own font rather than guessed from a
+   per-character average, which drifts badly on proportional type. */
+const HV_TEXT_MIN=64,HV_TEXT_MAX=232;
+let hvMeas=null;
+function hvFitText(el){
+  if(!el||el.classList.contains("hv-open"))return;
+  if(!hvMeas){hvMeas=document.createElement("span");hvMeas.className="hv-meas";document.body.appendChild(hvMeas);}
+  const cs=getComputedStyle(el);
+  /* copied property by property — the `font` shorthand comes back empty in some
+     engines once a fallback stack is in play */
+  ["fontFamily","fontSize","fontWeight","fontStyle","letterSpacing"].forEach(k=>{hvMeas.style[k]=cs[k];});
+  hvMeas.textContent=el.value||el.placeholder||"";
+  const want=hvMeas.offsetWidth+6;
+  el.style.width=Math.max(HV_TEXT_MIN,Math.min(HV_TEXT_MAX,want))+"px";
+  el.style.height="";
+  const box=el.closest(".hv-f");
+  if(box)box.classList.toggle("hv-clip",want>HV_TEXT_MAX);
+}
+function hvFitAllText(){document.querySelectorAll("#homeVitalsSummary .hv-wide").forEach(hvFitText);}
+/* while focused the box wraps, so its height has to follow the content */
+function hvTextGrow(el){
+  if(el.classList.contains("hv-open")){
+    el.style.height="auto";
+    el.style.height=Math.min(el.scrollHeight,110)+"px";
+  }
+  hvCount();
+}
+/* focus hands the pill a full line; the inline width has to go or it would
+   outrank the stylesheet rule that widens it */
+function hvTextOpen(el){el.classList.add("hv-open");el.style.width="";hvTextGrow(el);}
+function hvTextClose(el){
+  el.classList.remove("hv-open");
+  hvFitText(el);
+  const box=el.closest(".hv-f");
+  if(box){const base=(box.getAttribute("title")||"").split(" — ")[0];
+    box.title=el.value?base+" — "+el.value:base;}
+}
 /* ---- Home: vitals card ----
    Two bands. The clock band stages what you type and writes it as ONE timestamped
    entry when you press Log, so a set of readings taken together stays one row in
@@ -4699,11 +5131,19 @@ function hvFieldHTML(c,val,staged,ghost){
     return `<div class="hv-f" title="${ttl}"><span class="hv-lab">${ab}</span>
       <select id="${id}" onchange="hvCount()">${opts}</select></div>`;
   }
-  const wide=c.type==="text"?" hv-wide":"";
-  const mode=c.type==="number"?'inputmode="decimal"':"";
   const g=ghost||"";
+  const shown=val==null?"":String(val);
+  if(c.type==="text"){
+    /* the tooltip carries the whole value, since the resting pill may clip it */
+    const tip=shown?ttl+" — "+shown:ttl+(g?" — last reading "+g:"");
+    return `<div class="hv-f hv-text" title="${esc(tip)}"><span class="hv-lab">${ab}</span>
+      <textarea id="${id}" class="hv-wide" rows="1" wrap="off" placeholder="${esc(g||"—")}"
+        oninput="hvTextGrow(this)" onkeydown="hvKey(event,'${esc(c.key)}')"
+        onfocus="hvTextOpen(this)" onblur="hvTextClose(this)">${esc(shown)}</textarea></div>`;
+  }
+  const mode=c.type==="number"?'inputmode="decimal"':"";
   return `<div class="hv-f" title="${ttl}${g?esc(" — last reading "+g):""}"><span class="hv-lab">${ab}</span>
-    <input id="${id}" class="${wide.trim()}" ${mode} placeholder="${esc(g||"—")}" value="${esc(val==null?"":val)}"
+    <input id="${id}" ${mode} placeholder="${esc(g||"—")}" value="${esc(shown)}"
       oninput="hvCount()" onkeydown="hvKey(event,'${esc(c.key)}')"></div>`;
 }
 function renderQuickFields(){
@@ -4757,6 +5197,7 @@ function renderQuickFields(){
       </div></div></div>`;
   }
   box.innerHTML=html;
+  hvFitAllText();
   /* once-a-day fields write on their own as soon as they are left */
   once.forEach(c=>{
     if(ynOptions(c))return;
@@ -4857,7 +5298,7 @@ function openVitalsModal(focusKey){
   document.getElementById("vitalsModalDate").textContent=prettyDate(cur);
   const body=document.getElementById("vitalsModalBody");
   // editable time stamp, defaulting to now
-  const timeField=`<div class="field"><label>Time</label><input type="time" id="q_time" value="${isToday?nowTime():"08:00"}"><div class="hint">Change it to log an earlier reading.</div></div>`;
+  const timeField=`<div class="field"><label>Time</label>${timeFieldHTML("q_time",isToday?nowTime():"08:00",{aria:"Time"})}<div class="hint">Change it to log an earlier reading.</div></div>`;
   body.innerHTML=timeField+(cols.length
     ? cols.map(c=>fieldHTML(c,{date:cur,time:""},"q_")).join("")
     : `<div class="field fg-full"><p class="hint" style="margin:0">No fields chosen. Choose rows on the Daily Log to pick what you log here.</p></div>`);
@@ -4948,9 +5389,9 @@ function renderQuickFeed(){
 
   // day totals
   const tot=document.getElementById("homeFeedsTotals");
-  const day=FEEDS.filter(e=>e.date===cur);
+  const day=daySessions(cur);
   if(!day.length){
-    const other=[...new Set(FEEDS.map(e=>e.date).filter(Boolean))].sort().reverse()[0];
+    const other=[...new Set(FEEDS.filter(isFeedSession).map(e=>e.date).filter(Boolean))].sort().reverse()[0];
     tot.innerHTML=`<div class="nt-empty">No sessions ${isToday?"yet today":"on this day"}.${
       other?` Most recent: <button class="btn btn-ghost btn-sm" style="padding:2px 6px" onclick="setHomeDate('${other}')">${shortDate(other)}</button>`:""
     }</div>`;
@@ -5012,10 +5453,10 @@ function openSessionModal(mode){
     ${presetHTML}
     <div class="dm-section">
       <div class="form-grid ss-grid">
-        <div class="field"><label>${mode==="start"?"Start time":"End time"}</label><input type="time" id="ss_time" value="${nowTime()}"></div>
+        <div class="field"><label>${mode==="start"?"Start time":"End time"}</label>${timeFieldHTML("ss_time",nowTime(),{aria:mode==="start"?"Start time":"End time"})}</div>
         <div class="field ss-fl"><label class="ss-fl-lab"><input type="checkbox" id="ss_flushOn" checked onchange="toggleSessFlush()"> Flush mL</label><input type="number" min="0" step="5" id="ss_fvol" value="${esc(lastFlushVolume())}" placeholder="mL"></div>
       </div>
-      <div class="hint">Time defaults to now. The flush is recorded as <b>${esc(nextFlushLabel(mode==="end"?ls:liveSession(cur)))}</b> at that same time — untick it to skip.</div>
+      <div class="hint">Time defaults to now. The flush is recorded as <b>${esc(nextFlushLabel(flushHolder(cur,false)))}</b> at that same time and counts toward the day's total like any other — untick it to skip.</div>
     </div>
     ${detailHTML}`;
   showModal("sessionModal");
@@ -5085,7 +5526,7 @@ async function saveSessionFn(){
     const v=(el.value||"").trim();
     if(v)target[k]=v; else if(sessMode==="start")delete target[k];
   });
-  if(wantFlush&&fv){const col=await putFlush(target,ft,fv);msg+=` · ${col.label} ${fv} mL`;}
+  if(wantFlush&&fv){const col=await putFlush(flushHolder(homeDate(),true),ft,fv);msg+=` · ${col.label} ${fv} mL`;}
   await storeSet(KEYS.feeds,FEEDS);
   hideModal("sessionModal");renderFeeds();renderQuickFeed();toast(msg);
 }
@@ -5093,29 +5534,38 @@ document.getElementById("saveSession").onclick=saveSessionFn;
 async function removeFlush(sid,cid){
   const e=FEEDS.find(x=>x.id===sid);if(!e||!e.flushes)return;
   delete e.flushes[cid];
+  pruneEmptyFeedRows();
   await storeSet(KEYS.feeds,FEEDS);renderFeeds();renderQuickFeed();toast("Flush removed");
 }
-/* quick flush: lands on the running session, else the latest one that day */
-function flushTarget(date){
-  const live=liveSession(date);
-  if(live)return live;
-  const day=FEEDS.filter(e=>e.date===date).sort((a,b)=>(b.start||"").localeCompare(a.start||""));
-  return day[0]||null;
+/* Flushes are a property of the day, not of a session: one goes in whether or
+   not a feed is running, and the same flush column numbering should run across
+   the whole date. So every flush for a date lands on ONE record — the day's
+   flush row — and sessions never carry any. */
+function flushHolder(date,create){
+  let h=FEEDS.find(e=>e.date===date&&!isFeedSession(e));
+  if(!h&&create){h={id:uid(),date,custom:{},flushes:{}};FEEDS.push(h);}
+  return h||null;
+}
+function flushTarget(date){return flushHolder(date,false);}
+/* a flush row with its last flush removed is not a session and holds nothing —
+   leaving it behind would put an empty date back in the Feeds table */
+function pruneEmptyFeedRows(){
+  FEEDS=FEEDS.filter(e=>isFeedSession(e)||Object.keys(e.flushes||{}).length);
 }
 function openFlushModal(){
   const cur=homeDate();
-  const t=flushTarget(cur);
+  const t=flushHolder(cur,false);
   const cols=PREFS.flushCols||[];
   const nextCol=cols.find(c=>t?!flushVal(t,c.id).v&&!flushVal(t,c.id).t:true);
   const lastVol=(()=>{for(const e of [...FEEDS].reverse())for(const c of cols){const v=flushVal(e,c.id).v;if(v)return v;}return"";})();
   document.getElementById("flushModalBody").innerHTML=`
     <div class="dose-modal-sub" style="margin-bottom:2px">${prettyDate(cur)}</div>
-    <div class="dose-modal-med">${t?esc(t.food||t.route||"Session"):"New session"}${t&&t.start?` <span style="font-size:12px;font-weight:400;color:var(--muted)">started ${timePretty(t.start)}</span>`:""}</div>
+    <div class="dose-modal-med">Flush</div>
     <div class="form-grid" style="margin-top:16px">
-      <div class="field"><label>Time</label><input type="time" id="fm_time" value="${nowTime()}"></div>
+      <div class="field"><label>Time</label>${timeFieldHTML("fm_time",nowTime(),{aria:"Time"})}</div>
       <div class="field"><label>Volume (mL)</label><input type="number" min="0" step="5" id="fm_vol" value="${esc(lastVol)}" placeholder="mL"></div>
     </div>
-    <div class="hint">${t?`Recorded against ${nextCol?esc(nextCol.label):"a new flush column"}.`:"A new session will be created to hold this flush."}</div>`;
+    <div class="hint">Recorded as ${nextCol?esc(nextCol.label):"a new flush column"} on this day's flush row, whether or not a session is running.</div>`;
   showModal("flushModal");
 }
 async function saveFlushFn(){
@@ -5123,8 +5573,7 @@ async function saveFlushFn(){
   const vol=(document.getElementById("fm_vol")||{}).value||"";
   if(!time&&!vol){toast("Enter a time or volume");return;}
   const cur=homeDate();
-  let t=flushTarget(cur);
-  if(!t){t={id:uid(),date:cur,custom:{},flushes:{}};FEEDS.push(t);}
+  const t=flushHolder(cur,true);
   const col=await putFlush(t,time,vol);
   await storeSet(KEYS.feeds,FEEDS);
   hideModal("flushModal");renderFeeds();renderQuickFeed();
@@ -5148,11 +5597,14 @@ function openTimesModal(id){
     <div class="dose-modal-med">${esc((e.food||"").trim()||"Unnamed formula")}</div>
     <div class="dose-modal-sub" style="margin-bottom:14px">${prettyDate(e.date)}</div>
     <div class="form-grid">
-      <div class="field"><label>Start</label><input type="time" id="tm_start" value="${esc(e.start||"")}" oninput="timesPreview()"></div>
-      <div class="field"><label>End</label><input type="time" id="tm_end" value="${esc(e.end||"")}" oninput="timesPreview()"></div>
+      <div class="field"><label>Start</label>${timeFieldHTML("tm_start",e.start||"",{aria:"Start"})}</div>
+      <div class="field"><label>End</label>${timeFieldHTML("tm_end",e.end||"",{aria:"End"})}</div>
     </div>
     <div class="hint" id="tm_dur"></div>
     <div class="hint">Leave End empty while the session is still running. Formula, volume and the rest live on the formula chip.</div>`;
+  /* the fields used to fire oninput; the typed field commits on blur, so the
+     duration line follows the hidden input's change event instead */
+  ["tm_start","tm_end"].forEach(k=>{const h=document.getElementById(k);if(h)h.addEventListener("change",timesPreview);});
   timesPreview();
   showModal("timesModal");
 }
@@ -6295,7 +6747,9 @@ async function exportExcel(){
     const groups={};FEEDS.forEach(e=>{(groups[e.date]=groups[e.date]||[]).push(e);});
     const dates=Object.keys(groups).sort();
     dates.forEach(d=>groups[d].sort((a,b)=>(a.start||"").localeCompare(b.start||"")));
-    const maxSess=Math.max(...dates.map(d=>groups[d].length));
+    /* the day's flush row is not a session and must not open an empty S column */
+    const sessOf=d=>groups[d].filter(isFeedSession);
+    const maxSess=Math.max(0,...dates.map(d=>sessOf(d).length));
     const fl=PREFS.flushCols||[];
     const custom=feedCustomCols();
     const labels={units:"Units",volume:"Vol mL",calories:"Cal",protein:"Prot g",sugar:"Sugar g"};
@@ -6314,7 +6768,8 @@ async function exportExcel(){
         if(c.type==="number"){const t=list.reduce((a,e)=>a+(Number(getFeedVal(e,c))||0),0);row.push(t?rnd(t,1):"");}
         else row.push([...new Set(list.map(e=>getFeedVal(e,c)).filter(Boolean))].join(" · "));
       });
-      for(let i=0;i<maxSess;i++){const e=list[i];
+      const sess=sessOf(d);
+      for(let i=0;i<maxSess;i++){const e=sess[i];
         row.push(e&&e.start?timePretty(e.start):"");
         row.push(e?(e.end?timePretty(e.end):"open"):"");
         row.push(e?feedDuration(e):"");}
@@ -6361,7 +6816,7 @@ async function loadGlobalsFromStore(){
   let migrated=false;MEDLOG.forEach(e=>{if(e.hours&&!e.times){e.times=Object.keys(e.hours).map(h=>pad(parseInt(h,10))+":00").sort();delete e.hours;migrated=true;}if(!e.times)e.times=[];});if(migrated)await storeSet(KEYS.medlog,MEDLOG);
   let d=await storeGet(KEYS.daily);if(d===null){d=seedDaily();await storeSet(KEYS.daily,d);}DAILY=d;
   const p=await storeGet(KEYS.prefs);
-  if(p){PREFS={colvis:Object.assign({meds:{},daily:{},medlog:{}},p.colvis||{}),customCols:Array.isArray(p.customCols)?p.customCols:[],medCols:Array.isArray(p.medCols)?p.medCols:[],medlogCols:Array.isArray(p.medlogCols)?p.medlogCols:[],removedDaily:Array.isArray(p.removedDaily)?p.removedDaily:[],onceDaily:Array.isArray(p.onceDaily)?p.onceDaily:[],nutriMode:["both","nutrition","fluids"].includes(p.nutriMode)?p.nutriMode:"both",nutriCols:Array.isArray(p.nutriCols)?p.nutriCols:[],feedCols:Array.isArray(p.feedCols)?p.feedCols:[],flushCols:Array.isArray(p.flushCols)?p.flushCols:[],feedsOn:!!p.feedsOn,flushGoal:Number(p.flushGoal)||0,flushGoals:(p.flushGoals&&typeof p.flushGoals==="object")?p.flushGoals:{},wideNotes:!!p.wideNotes,dailyView:["day","grid"].includes(p.dailyView)?p.dailyView:"grid",dailyRange:p.dailyRange||"7",entryRange:p.entryRange||"3",medRange:p.medRange||"1",doseRange:p.doseRange||"7",nutriRange:p.nutriRange||"7",feedRange:p.feedRange||"7",cardOrder:Array.isArray(p.cardOrder)?p.cardOrder:["meds","vitals","feeds","nutrition"],cardsOn:Object.assign({meds:true,vitals:true,feeds:true,nutrition:true},p.cardsOn||{}),quickNutri:Array.isArray(p.quickNutri)?p.quickNutri:["food","volume","calories","protein","sugar","fat"],quickFeed:Array.isArray(p.quickFeed)?p.quickFeed:["route","food","units","volume","rate","start","end"],regimens:Array.isArray(p.regimens)?p.regimens:[],activeRegimen:p.activeRegimen||null,treatmentOn:["on","off"].includes(p.treatmentOn)?p.treatmentOn:"auto",chartsOn:(p.chartsOn&&typeof p.chartsOn==="object")?p.chartsOn:{},notif:mergeNotif(p.notif)};
+  if(p){PREFS={colvis:Object.assign({meds:{},daily:{},medlog:{}},p.colvis||{}),customCols:Array.isArray(p.customCols)?p.customCols:[],medCols:Array.isArray(p.medCols)?p.medCols:[],medlogCols:Array.isArray(p.medlogCols)?p.medlogCols:[],removedDaily:Array.isArray(p.removedDaily)?p.removedDaily:[],onceDaily:Array.isArray(p.onceDaily)?p.onceDaily:[],dailyOrder:Array.isArray(p.dailyOrder)?p.dailyOrder:[],nutriMode:["both","nutrition","fluids"].includes(p.nutriMode)?p.nutriMode:"both",nutriCols:Array.isArray(p.nutriCols)?p.nutriCols:[],feedCols:Array.isArray(p.feedCols)?p.feedCols:[],flushCols:Array.isArray(p.flushCols)?p.flushCols:[],feedsOn:!!p.feedsOn,flushGoal:Number(p.flushGoal)||0,flushGoals:(p.flushGoals&&typeof p.flushGoals==="object")?p.flushGoals:{},wideNotes:!!p.wideNotes,dailyView:["day","grid"].includes(p.dailyView)?p.dailyView:"grid",dailyRange:p.dailyRange||"7",entryRange:p.entryRange||"3",medRange:p.medRange||"1",doseRange:p.doseRange||"7",nutriRange:p.nutriRange||"7",feedRange:p.feedRange||"7",cardOrder:Array.isArray(p.cardOrder)?p.cardOrder:["meds","vitals","feeds","nutrition"],cardsOn:Object.assign({meds:true,vitals:true,feeds:true,nutrition:true},p.cardsOn||{}),quickNutri:Array.isArray(p.quickNutri)?p.quickNutri:["food","volume","calories","protein","sugar","fat"],quickFeed:Array.isArray(p.quickFeed)?p.quickFeed:["route","food","units","volume","rate","start","end"],regimens:Array.isArray(p.regimens)?p.regimens:[],activeRegimen:p.activeRegimen||null,treatmentOn:["on","off"].includes(p.treatmentOn)?p.treatmentOn:"auto",chartsOn:(p.chartsOn&&typeof p.chartsOn==="object")?p.chartsOn:{},notif:mergeNotif(p.notif)};
     PREFS.colvis.meds=PREFS.colvis.meds||{};PREFS.colvis.daily=PREFS.colvis.daily||{};PREFS.colvis.medlog=PREFS.colvis.medlog||{};}
   PREFS.colvis.nutrition=PREFS.colvis.nutrition||{};PREFS.colvis.feeds=PREFS.colvis.feeds||{};
 }
@@ -6503,7 +6958,22 @@ function rateSummary(r,d){
   const u=(d.unit||"mg")+"/m²";
   return seen.length>1?seen[0]+" → "+seen[seen.length-1]+" "+u:seen[0]+" "+u;
 }
-function visitsSorted(){return [...VISITS].sort((a,b)=>(a.date||"").localeCompare(b.date||""));}
+/* A visit belongs to one regimen. Without this every regimen showed every
+   visit, which is why there was never any point offering a second one.
+   Visits recorded before the link existed are adopted by the regimen that was
+   active at the time — see adoptOrphanVisits(). */
+function visitsSorted(rid){
+  const id=(rid!==undefined)?rid:(regimen()||{}).id;
+  return VISITS.filter(v=>v.rid===id).sort((a,b)=>(a.date||"").localeCompare(b.date||""));
+}
+function visitsOf(rid){return VISITS.filter(v=>v.rid===rid);}
+async function adoptOrphanVisits(){
+  const r=regimen(); if(!r) return false;
+  let n=0; VISITS.forEach(v=>{ if(!v.rid){ v.rid=r.id; n++; } });
+  if(!n) return false;
+  await storeSet(KEYS.visits,VISITS);
+  return true;
+}
 function visitCell(v,id){return (v.doses&&v.doses[id])||null;}
 
 const TREAT_SECTIONS=[{k:"chemo",l:"Chemotherapy"},{k:"premed",l:"Premedications"},{k:"other",l:"Other"}];
@@ -6513,6 +6983,16 @@ function renderTreat(){
   const r=regimen();
   const vs=visitsSorted();
   document.getElementById("treatTitle").textContent=r&&r.name?r.name:"Treatment";
+  /* switching course is a viewing action, not an editing one, so it sits on the
+     tab rather than only inside the Regimen editor */
+  const rs=regimenList(), sw=document.getElementById("treatSwitch");
+  if(sw){
+    if(rs.length>1&&r){
+      sw.style.display="";
+      sw.innerHTML=`<select aria-label="Regimen" onchange="switchRegimen(this.value)">${
+        rs.map((x,i)=>`<option value="${x.id}"${x.id===r.id?" selected":""}>${esc(regimenLabel(x,i))}</option>`).join("")}</select>`;
+    }else sw.innerHTML="",sw.style.display="none";
+  }
   if(!r){
     wrap.innerHTML=`<div class="empty" style="padding:44px 24px">
       <div class="ico">${ICO.pill}</div>
@@ -6534,8 +7014,9 @@ function renderTreat(){
   const drugs=(r.drugs||[]);
   const labs=(r.labs||[]);
   let head=`<tr><th class="tlead">&nbsp;</th>`;
+  const landOn=latestVisitId(vs);
   vs.forEach(v=>{
-    head+=`<th class="tv"><button onclick="openVisit('${v.id}')" title="Edit this visit">
+    head+=`<th class="tv${v.id===landOn?" tv-latest":""}"${v.id===landOn?' data-latest="1"':""}><button onclick="openVisit('${v.id}')" title="Edit this visit">
       <span class="cyc">${esc(v.cycle||"Visit")}</span>
       <span class="dt">${v.date?shortDate(v.date):"no date"}</span></button></th>`;
   });
@@ -6604,8 +7085,36 @@ function renderTreat(){
 
   const bNow=vs.length?effBsa(vs[vs.length-1]):bsaOf(r);
   const nChg=vs.filter(bsaChangedAt).length+vs.reduce((n,v)=>n+Object.keys(v.rates||{}).filter(k=>v.rates[k].perM2).length,0);
+  /* editing a dose or a lab re-renders the whole sheet, which used to throw the
+     view back to the first visit mid-edit. Hold the horizontal position. */
+  const keep=wrap.scrollLeft;
   wrap.innerHTML=`<div class="range-count">${vs.length} visit${vs.length===1?"":"s"}${bNow?` · BSA now ${bNow} m²`:" · no BSA set, doses show as mg/m²"}${nChg?` · ${nChg} plan change${nChg===1?"":"s"}`:""}</div>
     <table class="tg"><thead>${head}</thead><tbody>${body}</tbody></table>`;
+  wrap.scrollLeft=keep;
+}
+/* Visits run oldest to newest left to right, so after a few cycles the one you
+   are actually working on is off the right edge. "Latest" means the newest visit
+   dated today or earlier — a course with dates booked ahead should open on the
+   last one that has happened, not on a future column. If every visit is still
+   ahead, the first of them is the one to show. */
+function latestVisitId(vs){
+  const list=vs||visitsSorted();
+  if(!list.length)return null;
+  const today=todayISO();
+  const past=list.filter(v=>v.date&&v.date<=today);
+  if(past.length)return past[past.length-1].id;
+  const dated=list.filter(v=>v.date);
+  return (dated[0]||list[list.length-1]).id;
+}
+function scrollTreatToLatest(){
+  const wrap=document.getElementById("treatWrap");if(!wrap)return;
+  const th=wrap.querySelector("th.tv[data-latest]");
+  if(!th){wrap.scrollLeft=wrap.scrollWidth;return;}
+  /* the label column is sticky over the left edge, so the target is parked at
+     the right instead — it can never end up underneath it */
+  const pad=12;
+  const want=th.offsetLeft+th.offsetWidth-wrap.clientWidth+pad;
+  wrap.scrollLeft=Math.max(0,Math.min(want,wrap.scrollWidth-wrap.clientWidth));
 }
 
 /* nearest reading on the visit date, read-only */
@@ -6747,10 +7256,10 @@ async function saveVisitFn(){
   if(editingVisit){
     VISITS=VISITS.map(v=>v.id===editingVisit?{...v,date,cycle}:v);
   }else{
-    VISITS.push({id:uid(),date,cycle,doses:{},labs:{},notes:""});
+    VISITS.push({id:uid(),rid:(regimen()||{}).id,date,cycle,doses:{},labs:{},notes:""});
   }
   await storeSet(KEYS.visits,VISITS);
-  hideModal("visitModal");renderTreat();toast(editingVisit?"Visit updated":"Visit added");
+  hideModal("visitModal");renderTreat();requestAnimationFrame(scrollTreatToLatest);toast(editingVisit?"Visit updated":"Visit added");
   editingVisit=null;
 }
 async function deleteVisitFn(){
@@ -6765,6 +7274,43 @@ document.getElementById("deleteVisitBtn").onclick=deleteVisitFn;
 document.getElementById("addVisitBtn").onclick=()=>openVisit();
 
 /* ---- the regimen itself ---- */
+function regimenList(){return PREFS.regimens||(PREFS.regimens=[]);}
+function regimenLabel(r,i){return (r.name||"").trim()||("Regimen "+(i+1));}
+async function switchRegimen(id){
+  if(!id||id===PREFS.activeRegimen)return;
+  PREFS.activeRegimen=id; rgEdit=null;
+  await savePrefs();
+  renderRegimen();renderTreat();renderTabs();
+  requestAnimationFrame(scrollTreatToLatest);
+}
+async function addRegimen(){
+  const r={id:uid(),name:"",bsa:"",drugs:[],labs:[]};
+  regimenList().push(r); PREFS.activeRegimen=r.id; rgEdit=null;
+  await savePrefs();
+  renderRegimen();renderTreat();renderTabs();
+  const el=document.getElementById("rg_name"); if(el){el.focus();}
+  toast("New regimen — give it a name");
+}
+async function deleteRegimen(){
+  const rs=regimenList(), r=regimen(); if(!r)return;
+  const i=rs.findIndex(x=>x.id===r.id);
+  const n=visitsOf(r.id).length;
+  const what=regimenLabel(r,i<0?0:i);
+  if(!await askConfirm(n
+      ? `Delete ${what} and the ${n} visit${n===1?"":"s"} recorded under it? The other regimens are not affected.`
+      : `Delete ${what}?`))return;
+  PREFS.regimens=rs.filter(x=>x.id!==r.id);
+  VISITS=VISITS.filter(v=>v.rid!==r.id);
+  PREFS.activeRegimen=(PREFS.regimens[0]||{}).id||null;
+  rgEdit=null;
+  await savePrefs(); await storeSet(KEYS.visits,VISITS);
+  /* renderRegimen() creates a blank regimen when there is none, so re-rendering
+     the editor here would silently replace the one just deleted. With nothing
+     left, close it and let the tab show its "set one up" state. */
+  if(PREFS.regimens.length) renderRegimen(); else hideModal("regimenModal");
+  renderTreat();renderTabs();
+  toast(what+" deleted");
+}
 function openRegimen(){renderRegimen();showModal("regimenModal");}
 /* the editor re-renders on any change, which used to wipe a half-typed drug the
    moment you touched the regimen name or BSA. carry the entry fields across. */
@@ -6832,7 +7378,19 @@ function renderRegimen(){
       <button class="icon-btn" onclick="event.stopPropagation();editRow('lab','${l.id}')" title="Edit">${ICO.edit}</button>
       <button class="icon-btn del" onclick="event.stopPropagation();removeLab('${l.id}')" title="Remove">${ICO.del}</button></div>`;
   };
-  document.getElementById("regimenBody").innerHTML=`
+  const rs=regimenList();
+  /* Only shown once there is something to choose between — a single regimen
+     should not have to be picked out of a list of one. */
+  const picker=rs.length>1?`
+    <div class="rg-pick">
+      <label for="rg_which">Editing</label>
+      <select id="rg_which" onchange="switchRegimen(this.value)">
+        ${rs.map((x,i)=>`<option value="${x.id}"${x.id===r.id?" selected":""}>${esc(regimenLabel(x,i))}${visitsOf(x.id).length?" · "+visitsOf(x.id).length+" visit"+(visitsOf(x.id).length===1?"":"s"):""}</option>`).join("")}
+      </select>
+      <button class="btn btn-sm" onclick="addRegimen()">＋ New</button>
+      <button class="icon-btn del" onclick="deleteRegimen()" title="Delete this regimen">${ICO.del}</button>
+    </div>`:"";
+  document.getElementById("regimenBody").innerHTML=picker+`
     <div class="form-grid ss-grid">
       <div class="field fg-full"><label>Regimen name</label><input id="rg_name" value="${esc(r.name||"")}" placeholder="e.g. FOLFIRI" onchange="setRegimenField('name',this.value)"></div>
       <div class="field"><label>Starting BSA (m²)</label><input type="number" step="0.01" id="rg_bsa" value="${esc(r.bsa||"")}" placeholder="1.53" onchange="setRegimenField('bsa',this.value)"></div>
@@ -6865,7 +7423,9 @@ function renderRegimen(){
         <div class="rg-note">Not in the regimen yet — press the button, or hit Enter.</div>
       </div>
       <div class="hint">Labs are numbers, so they can be charted across cycles.</div>
-    </div>`;
+    </div>
+    ${rs.length>1?"":`<div class="rg-newline"><button class="btn btn-sm" onclick="addRegimen()">＋ Add another regimen</button>
+      <span class="hint">A second course keeps its own drugs, labs and visits.</span></div>`}`;
   restorePending(pend);
   wireAddBlock("rg_dadd","rg_dname","rg_dbtn","drug",addDrug);
   wireAddBlock("rg_ladd","rg_lname","rg_lbtn","lab",addLab);
@@ -7057,7 +7617,9 @@ document.getElementById("treatRowsBtn").onclick=openRegimen;
 
 /* one-time load of the uploaded outpatient sheet */
 async function loadOutpatientSheet(){
-  if(VISITS.length&&!await askConfirm("This replaces the visits already recorded. Continue?"))return;
+  /* this used to replace PREFS.regimens and VISITS wholesale; now that a course
+     is one of several, it is added alongside whatever is already recorded */
+  if(regimenList().length&&!await askConfirm("Add the FOLFIRI outpatient sheet as another regimen? Nothing already recorded is changed."))return;
   const rid=uid();
   const mk=(label,section,perM2,flat,unit)=>({id:uid(),label,section,perM2:perM2||"",flat:flat||"",unit:unit||"mg"});
   const drugs=[
@@ -7071,7 +7633,7 @@ async function loadOutpatientSheet(){
   ];
   const labs=[["ANC",""],["Platelets","K/µL"],["Hgb","g/dL"],["Albumin","g/dL"],["Sodium","mmol/L"]]
     .map(([label,unit])=>({id:uid(),label,unit}));
-  PREFS.regimens=[{id:rid,name:"FOLFIRI",bsa:"1.53",drugs,labs}];
+  regimenList().push({id:rid,name:"FOLFIRI",bsa:"1.53",drugs,labs});
   PREFS.activeRegimen=rid;
   const L=n=>labs[n].id, D=n=>drugs[n].id;
   const AS_ORDERED=["230 mg","600 mg","3700 mg","4 mg","250 mcg","0.5 mg","200 mg"];
@@ -7083,14 +7645,14 @@ async function loadOutpatientSheet(){
     ["2026-07-30","C3D1",[0,1,2,3,4,5,6],["5.34","482","10","3.5","137"],"7/28 CT Scan: Bilateral PE\n8/6 Para: Not enough fluid to drain"],
     ["2026-08-13","C3D15",[0,1,2,3,4,5,6],["5.33","494","9.9","3.8","135"],"8/20 Para: No fluid to drain, maybe less than 8/6"]
   ];
-  VISITS=rows.map(([date,cycle,given,lv,notes])=>{
+  VISITS=VISITS.concat(rows.map(([date,cycle,given,lv,notes])=>{
     const doses={},lab={};
     given.forEach(i=>doses[D(i)]={given:true,dose:AS_ORDERED[i],note:""});
     lv.forEach((val,i)=>{if(val)lab[L(i)]=val;});
-    return{id:uid(),date,cycle,doses,labs:lab,notes};
-  });
+    return{id:uid(),rid,date,cycle,doses,labs:lab,notes};
+  }));
   await savePrefs();await storeSet(KEYS.visits,VISITS);
-  renderTreat();toast("Outpatient sheet loaded");
+  renderTreat();renderTabs();requestAnimationFrame(scrollTreatToLatest);toast("Outpatient sheet loaded");
 }
 
 /* ==========================================================================
@@ -7380,7 +7942,7 @@ function renderAll(){
   renderMeds();renderMedFilter();renderLogGrid();renderLogTable();renderDaily();renderNutrition();renderFeeds();renderHome();
 }
 /* used by the sync engine to refresh the screen after a merge pulls in new entries */
-window.__reloadAllFromStore=async function(){ await loadGlobalsFromStore(); renderAll(); };
+window.__reloadAllFromStore=async function(){ await loadGlobalsFromStore(); await consolidateFlushes(); renderAll(); };
 
 async function init(){
   document.getElementById("todayLabel").textContent=prettyDate(todayISO());
@@ -7389,6 +7951,8 @@ async function init(){
   HOME_DATE=todayISO();
   document.getElementById("homeDate").value=todayISO();
   await loadGlobalsFromStore();
+  await consolidateFlushes();   // one-time: move flushes off sessions onto the day's row
+  await adoptOrphanVisits();    // one-time: attach existing visits to their regimen
   syncNutriMode();
   wireSettings();
   renderAll();
