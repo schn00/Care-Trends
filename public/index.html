@@ -352,11 +352,13 @@
   .mb-sub{font-size:12px;color:var(--muted);margin-top:1px}
   .dose-today{display:flex;flex-wrap:wrap;gap:5px;align-items:center;margin:6px 0 0}
   .dose-today .lab{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-right:2px}
-  .dose-chip{display:inline-flex;align-items:center;gap:6px;background:var(--chip);color:var(--teal-700);border-radius:999px;padding:5px 7px 5px 11px;font-size:12px;font-variant-numeric:tabular-nums;font-weight:600}
+  /* logged doses take the same blue as a logged flush, so a record of something
+     already given never reads as another teal action button */
+  .dose-chip{display:inline-flex;align-items:center;gap:6px;background:var(--chip);color:var(--blue);border-radius:999px;padding:5px 7px 5px 11px;font-size:12px;font-variant-numeric:tabular-nums;font-weight:600}
   /* home rows run condensed so a long med list stays scannable on a phone */
   .med-block .dose-chip{padding:3px 6px 3px 10px;gap:4px}
   .med-block .give-btn{padding:6px 12px;font-size:12.5px}
-  .dose-chip button{border:none;background:none;color:var(--teal-700);cursor:pointer;display:grid;place-items:center;padding:0;width:15px;height:15px}
+  .dose-chip button{border:none;background:none;color:var(--blue);cursor:pointer;display:grid;place-items:center;padding:0;width:15px;height:15px}
   .dose-chip button svg{width:13px;height:13px}
   .dose-none{font-size:12px;color:var(--muted)}
   .sugg{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
@@ -519,6 +521,8 @@
     -webkit-text-fill-color:var(--ink)}
   .hv-f input{width:46px}
   .hv-f input.hv-w2{width:32px}
+  /* one box holds the whole reading, so it needs room for 120/100 */
+  .hv-f input.hv-bp{width:66px}
   .hv-f input.hv-wide{width:120px;text-align:left;font-family:"Figtree",system-ui,sans-serif;font-size:13px;font-weight:500}
   /* A free-text row (Symptom, Mobility) is the only field here whose value has
      no fixed length, and a 120px box shows about fifteen characters. It is a
@@ -554,7 +558,6 @@
   [data-card] input.hv-time:not([type=checkbox]):not([type=radio]){background-color:var(--surface);border:1px solid var(--line);color:var(--ink)}
   [data-card] input.hv-time:not([type=checkbox]):not([type=radio]):focus{border-color:var(--teal);box-shadow:0 0 0 2px var(--teal-050)}
   .hv-f input::placeholder,.hv-f textarea::placeholder{color:var(--muted);opacity:.55;font-weight:500}
-  .hv-slash{color:var(--muted);font-size:13px;font-weight:600}
   /* Yes/No is one control that cycles blank to yes to no, so it never changes
      width and needs no second button */
   .hv-yn{border:1px solid transparent;background:var(--chip);border-radius:12px;padding:0 11px;height:33px;
@@ -1830,8 +1833,8 @@ window.Theme=(function(){
     <div class="section-head">
       <div><h2 id="treatTitle">Treatment</h2><p class="lead" id="treatLead">One column per visit. Doses come from the regimen and the body surface area, so changing the BSA updates them all.</p></div>
       <div class="head-actions">
-        <span class="treat-switch" id="treatSwitch" style="display:none"></span>
-        <button class="btn btn-sm" id="regimenBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><path d="M12 3v18M3 12h18"/></svg> Regimen</button>
+        <span class="treat-switch stay" id="treatSwitch" style="display:none"></span>
+        <button class="btn btn-sm stay" id="regimenBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><path d="M12 3v18M3 12h18"/></svg> Regimen</button>
         <button class="btn btn-sm" id="treatRowsBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:15px;height:15px"><rect x="3" y="3" width="18" height="7"/><rect x="3" y="14" width="18" height="7"/></svg> Rows</button>
         <button class="btn btn-primary" id="addVisitBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg> Add visit</button>
       </div>
@@ -4440,33 +4443,63 @@ function isFeedSession(e){
   return feedCustomCols().some(c=>has(getVal(e,c)));
 }
 function daySessions(date){return FEEDS.filter(e=>e.date===date&&isFeedSession(e));}
-/* Older data has flushes stored on whichever session happened to be open when
-   they were logged, so one date could hold two "Flush 1"s and deleting a
-   session took its flushes with it. This moves every flush onto the date's own
-   row, in time order, once. Nothing is discarded: a column collision just takes
-   the next free column, and a new one is added if they all fill up. */
-async function consolidateFlushes(){
-  const dates=[...new Set(FEEDS.filter(e=>isFeedSession(e)&&Object.keys(e.flushes||{}).length).map(e=>e.date))];
-  if(!dates.length)return false;
+/* Every flush for a date lives on ONE record — that date's flush row — in
+   chronological order, so Flush 1..N read the same way whether they came from
+   a session start/stop or were logged on their own. Anything sitting on a
+   session (older data, or a flush row that later gained feed details) is moved
+   back onto the day's row. Two flushes on the same date with the same time and
+   the same volume are the fingerprint of the old duplication bug, not two
+   separate flushes, so they collapse into one. */
+function normalizeDayFlushes(date){
+  if(!date)return{changed:false,grew:false};
   PREFS.flushCols=PREFS.flushCols||[];
+  const rows=FEEDS.filter(e=>e.date===date);
+  if(!rows.length)return{changed:false,grew:false};
+  const before=JSON.stringify(rows.map(e=>e.flushes||{}));
+  const all=[];
+  rows.forEach(e=>{Object.keys(e.flushes||{}).forEach(fid=>{
+    const fv=e.flushes[fid];if(!fv)return;
+    const t=fv.t||"",v=(fv.v===undefined||fv.v===null)?"":String(fv.v);
+    if(t||v)all.push({t,v});
+  });});
+  const seen=new Set(),list=[];
+  all.forEach(f=>{const k=f.t+"|"+f.v;if(seen.has(k))return;seen.add(k);list.push(f);});
+  list.sort((a,b)=>(a.t||"~").localeCompare(b.t||"~"));   // untimed flushes sort last
   let grew=false;
-  dates.forEach(d=>{
-    const loose=[];
-    FEEDS.filter(e=>e.date===d&&isFeedSession(e)).forEach(e=>{
-      Object.keys(e.flushes||{}).forEach(fid=>{loose.push(e.flushes[fid]);});
-      e.flushes={};
-    });
-    const h=flushHolder(d,true);
-    h.flushes=h.flushes||{};
-    loose.sort((a,b)=>String(a.t||"").localeCompare(String(b.t||""))).forEach(fv=>{
-      let col=PREFS.flushCols.find(c=>{const x=h.flushes[c.id];return !x||(!x.t&&!x.v);});
-      if(!col){col={id:uid(),label:"Flush "+(PREFS.flushCols.length+1)};PREFS.flushCols.push(col);grew=true;}
-      h.flushes[col.id]=fv;
-    });
-  });
-  await storeSet(KEYS.feeds,FEEDS);
-  if(grew)await savePrefs();
-  return true;
+  while(PREFS.flushCols.length<list.length){
+    PREFS.flushCols.push({id:uid(),label:"Flush "+(PREFS.flushCols.length+1)});grew=true;
+  }
+  const packed={};
+  list.forEach((f,i)=>{packed[PREFS.flushCols[i].id]={t:f.t,v:f.v};});
+  const holder=list.length?flushHolder(date,true):flushHolder(date,false);
+  FEEDS.forEach(e=>{if(e.date===date&&e!==holder&&Object.keys(e.flushes||{}).length)e.flushes={};});
+  if(holder)holder.flushes=packed;
+  const after=JSON.stringify(FEEDS.filter(e=>e.date===date).map(e=>e.flushes||{}));
+  return{changed:grew||before!==after,grew};
+}
+/* run it for one date, a few dates, or the whole file */
+async function normalizeFlushes(dates){
+  const list=dates?(Array.isArray(dates)?dates:[dates]).filter(Boolean)
+                  :[...new Set(FEEDS.map(e=>e.date).filter(Boolean))];
+  let changed=false,grew=false;
+  [...new Set(list)].forEach(d=>{const r=normalizeDayFlushes(d);changed=changed||r.changed;grew=grew||r.grew;});
+  pruneEmptyFeedRows();
+  if(grew){await savePrefs();refreshNutriMenus();}
+  return changed;
+}
+/* whole-file pass, on boot and after a sync merge */
+async function consolidateFlushes(){
+  const changed=await normalizeFlushes();
+  if(changed)await storeSet(KEYS.feeds,FEEDS);
+  return changed;
+}
+/* which column a flush at this time ends up in, once the day is back in order */
+function flushLabelFor(date,t,v){
+  const h=flushHolder(date,false);
+  const key=(t||"")+"|"+((v===undefined||v===null)?"":String(v));
+  const c=h&&(PREFS.flushCols||[]).find(c=>{const fv=(h.flushes||{})[c.id];
+    return fv&&((fv.t||"")+"|"+((fv.v===undefined||fv.v===null)?"":String(fv.v)))===key;});
+  return c?c.label:"Flush";
 }
 function elapsedSince(hhmm){
   if(!hhmm)return"";
@@ -4615,7 +4648,9 @@ function updateFlushPreview(){
 }
 async function saveFeedFn(){
   const gv=id=>{const el=document.getElementById(id);return el?el.value.trim():"";};
-  const obj=editingFeedId?{...FEEDS.find(x=>x.id===editingFeedId)}:{id:uid(),custom:{},flushes:{}};
+  const prev=editingFeedId?FEEDS.find(x=>x.id===editingFeedId):null;
+  const prevFeedDate=prev?prev.date:null;
+  const obj=prev?{...prev}:{id:uid(),custom:{},flushes:{}};
   obj.custom=obj.custom?{...obj.custom}:{};obj.flushes=obj.flushes?{...obj.flushes}:{};
   FEED_COLS.concat(feedCustomCols()).forEach(c=>setFeedVal(obj,c,gv("fd_"+(c.custom?("c_"+c.cid):c.key))));
   if(!obj.date){toast("Pick a date first");return;}
@@ -4623,11 +4658,16 @@ async function saveFeedFn(){
   /* the flush fields belong to the date, so they are written to the day's flush
      row rather than to the record being edited */
   const fvals=flushCols().map(c=>({fid:c.fid,t:gv("fd_f_"+c.fid),v:gv("fd_fv_"+c.fid)}));
+  /* the form was filled from the day's flush row, so if the row being edited is
+     that row and it has just gained feed details, its flushes have to come off
+     it — otherwise they land on a fresh holder as well and show up twice */
+  if(isFeedSession(obj))obj.flushes={};
   if(fvals.some(f=>f.t||f.v)||flushHolder(obj.date,false)){
     const h=isFeedSession(obj)?flushHolder(obj.date,true):obj;
     h.flushes=h.flushes?{...h.flushes}:{};
     fvals.forEach(f=>{if(f.t||f.v)h.flushes[f.fid]={t:f.t,v:f.v};else delete h.flushes[f.fid];});
   }
+  await normalizeFlushes([obj.date,prevFeedDate]);
   pruneEmptyFeedRows();
   await storeSet(KEYS.feeds,FEEDS);hideModal("feedModal");renderFeeds();renderQuickFeed();
   const sameDay=obj.date===(typeof homeDate==="function"?homeDate():todayISO());
@@ -4651,6 +4691,7 @@ async function deleteFlushCol(fid){
   if(!await askConfirm(`Delete the "${f?f.label:""}" column?\nTimes recorded in it will be removed.`))return;
   PREFS.flushCols=(PREFS.flushCols||[]).filter(x=>x.id!==fid);
   FEEDS.forEach(e=>{if(e.flushes)delete e.flushes[fid];});
+  await normalizeFlushes();
   await savePrefs();await storeSet(KEYS.feeds,FEEDS);
   renderFlushList();refreshNutriMenus();renderFeeds();toast("Flush column deleted");
 }
@@ -5118,12 +5159,12 @@ function hvFieldHTML(c,val,staged,ghost){
   }
   if(c.key==="bp"){
     const sys=(val&&val.sys)||"",dia=(val&&val.dia)||"";
-    const gs=(ghost&&ghost.sys)||"—",gd=(ghost&&ghost.dia)||"—";
+    const cur=sys&&dia?sys+"/"+dia:(sys||dia||"");
+    const gp=ghost?ghost.sys+"/"+ghost.dia:"—/—";
     const gt=ghost?` — last reading ${ghost.sys}/${ghost.dia}`:"";
     return `<div class="hv-f" title="${ttl}${esc(gt)}"><span class="hv-lab">${ab}</span>
-      <input id="hv_sys" class="hv-w2" inputmode="numeric" placeholder="${esc(gs)}" value="${esc(sys)}" oninput="hvCount()" onkeydown="hvKey(event,'${esc(c.key)}')">
-      <span class="hv-slash">/</span>
-      <input id="hv_dia" class="hv-w2" inputmode="numeric" placeholder="${esc(gd)}" value="${esc(dia)}" oninput="hvCount()" onkeydown="hvKey(event,'${esc(c.key)}')"></div>`;
+      <input id="hv_bp" class="hv-bp" inputmode="numeric" maxlength="7" placeholder="${esc(gp)}" value="${esc(cur)}"
+        oninput="hvBPInput(this)" onkeydown="hvBPKey(event)" onblur="hvBPCommit(true)"></div>`;
   }
   if(c.type==="select"){
     const opts=["<option value=\"\">—</option>"].concat((c.options||[]).map(o=>
@@ -5201,16 +5242,85 @@ function renderQuickFields(){
   /* once-a-day fields write on their own as soon as they are left */
   once.forEach(c=>{
     if(ynOptions(c))return;
-    if(c.key==="bp"){
-      ["hv_sys","hv_dia"].forEach(i=>{const el=document.getElementById(i);if(el){el.oninput=null;el.onchange=()=>hvSaveOnce("bp");el.onkeydown=ev=>hvKey(ev,"bp");}});
-      return;
-    }
+    /* BP carries its own oninput/onblur handlers — it files itself */
+    if(c.key==="bp")return;
     const el=document.getElementById(chipFieldId(c));
     if(!el)return;
     el.oninput=null;
     el.onchange=()=>hvSaveOnce(c.key);
   });
   hvCount();
+}
+/* ---- blood pressure, one box -------------------------------------------
+   Digits go in end to end and the slash lands on its own once a fourth digit
+   arrives, so 12080 becomes 120/80 without a keystroke of its own. Typing "/"
+   places it early instead, which is what a two-digit systolic like 98/62
+   needs. A complete reading files itself: a short pause after the last digit,
+   or Enter, or leaving the field. The pause is what lets a three-digit
+   diastolic (120/100) finish before the reading is committed. */
+let hvBPT=null;
+function hvBPParse(raw){
+  const s=String(raw||"");
+  const cut=s.indexOf("/");
+  if(cut>=0)return{sys:s.slice(0,cut).replace(/\D/g,"").slice(0,3),
+                   dia:s.slice(cut+1).replace(/\D/g,"").slice(0,3),slash:true};
+  const d=s.replace(/\D/g,"").slice(0,6);
+  if(d.length>3)return{sys:d.slice(0,3),dia:d.slice(3),slash:true};
+  return{sys:d,dia:"",slash:false};
+}
+function hvBPText(p){return p.slash?p.sys+"/"+p.dia:p.sys;}
+/* both halves need two digits before a reading counts as whole — 120/8 is
+   still mid-typing, not a reading */
+function hvBPWhole(p){return p.sys.length>=2&&p.dia.length>=2;}
+function hvBPInput(el){
+  const atEnd=el.selectionStart===el.value.length;
+  const p=hvBPParse(el.value),t=hvBPText(p);
+  if(t!==el.value){el.value=t;if(atEnd)el.setSelectionRange(t.length,t.length);}
+  hvCount();
+  clearTimeout(hvBPT);
+  if(hvBPWhole(p))hvBPT=setTimeout(()=>hvBPCommit(false),800);
+}
+function hvBPKey(ev){
+  if(ev.key!=="Enter")return;
+  ev.preventDefault();
+  if(String(ev.target.value).trim()){hvBPCommit(true);return;}
+  const c=allDailyCols().find(x=>x.key==="bp");
+  if(c&&isOnce(c)){ev.target.blur();return;}
+  hvLog();
+}
+/* Re-rendering the card to pick up the new reading would wipe anything else
+   half-typed in the clock band, so the other fields are carried across. */
+function hvSnapshot(){
+  const s={};
+  document.querySelectorAll("#homeVitalsSummary input,#homeVitalsSummary select,#homeVitalsSummary textarea")
+    .forEach(el=>{if(el.id&&el.id!=="hv_bp"&&el.value)s[el.id]=el.value;});
+  return s;
+}
+function hvRestore(s){
+  Object.keys(s||{}).forEach(id=>{const el=document.getElementById(id);if(el&&!el.value)el.value=s[id];});
+  hvFitAllText();hvCount();
+}
+async function hvBPCommit(explicit){
+  clearTimeout(hvBPT);
+  const el=document.getElementById("hv_bp");if(!el)return;
+  const p=hvBPParse(el.value);
+  if(!hvBPWhole(p)){
+    if(explicit&&(p.sys||p.dia))toast("Blood pressure needs both numbers");
+    return;
+  }
+  const c=allDailyCols().find(x=>x.key==="bp");
+  const cur=homeDate();
+  hvFlashSaved();
+  if(c&&isOnce(c)){await setOnceValue(cur,"bp",p.sys,p.dia);return;}
+  const t=hvTimeNow();
+  const keep=hvSnapshot();
+  /* emptied before the await: a blur landing while the write is in flight must
+     not find a whole reading still sitting there and file it a second time */
+  el.value="";
+  await addDailyEntry({id:uid(),date:cur,time:t,custom:{},sys:p.sys,dia:p.dia});
+  renderDaily();renderHome();
+  hvRestore(keep);
+  toast("BP "+p.sys+"/"+p.dia+" logged at "+timeShort(t));
 }
 function hvKey(ev,key){
   if(ev.key!=="Enter")return;
@@ -5226,7 +5336,7 @@ function hvCount(){
   let n=0;
   quickFieldCols().filter(c=>c.type!=="textarea"&&!isOnce(c)).forEach(c=>{
     if(ynOptions(c)){if(hvYN[c.key])n++;return;}
-    if(c.key==="bp"){if(gv("hv_sys")&&gv("hv_dia"))n++;return;}
+    if(c.key==="bp"){if(hvBPWhole(hvBPParse(gv("hv_bp"))))n++;return;}
     if(gv(chipFieldId(c)))n++;
   });
   const t=document.getElementById("hvTime");
@@ -5262,7 +5372,7 @@ async function hvSaveOnce(key){
   const c=allDailyCols().find(x=>x.key===key);if(!c)return;
   const gv=i=>{const el=document.getElementById(i);return el?String(el.value).trim():"";};
   hvFlashSaved();
-  if(key==="bp"){await setOnceValue(homeDate(),"bp",gv("hv_sys"),gv("hv_dia"));return;}
+  if(key==="bp"){const p=hvBPParse(gv("hv_bp"));await setOnceValue(homeDate(),"bp",p.sys,p.dia);return;}
   await setOnceValue(homeDate(),key,gv(chipFieldId(c)));
 }
 /* one press, one entry: everything typed in the clock band goes in together at
@@ -5276,9 +5386,9 @@ async function hvLog(){
   cols.forEach(c=>{
     if(ynOptions(c)){if(hvYN[c.key]){setValObj(obj,c,hvYN[c.key]);n++;}return;}
     if(c.key==="bp"){
-      const sv=gv("hv_sys"),dv=gv("hv_dia");
-      if(sv&&dv){obj.sys=sv;obj.dia=dv;n++;}
-      else if(sv||dv)halfBP=true;
+      const p=hvBPParse(gv("hv_bp"));
+      if(hvBPWhole(p)){obj.sys=p.sys;obj.dia=p.dia;n++;}
+      else if(p.sys||p.dia)halfBP=true;
       return;
     }
     const v=gv(chipFieldId(c));
@@ -5478,11 +5588,15 @@ function toggleSessFlush(){
 }
 /* which flush column this will land in — first empty one on the session,
    otherwise a new one */
-function nextFlushLabel(sess){
+/* the day's flushes are kept in time order, so a new one takes the column its
+   time puts it in — usually the next free one, earlier if it is backdated */
+function nextFlushLabel(sess,time){
   const cols=PREFS.flushCols||[];
-  if(sess){const free=cols.find(c=>{const fv=flushVal(sess,c.id);return !fv.t&&!fv.v;});if(free)return free.label;}
-  else if(cols.length)return cols[0].label;
-  return "Flush "+(cols.length+1);
+  const t=time||nowTime();
+  const times=[];
+  if(sess)cols.forEach(c=>{const fv=flushVal(sess,c.id);if(fv.t||fv.v)times.push(fv.t||"~");});
+  const i=times.filter(x=>String(x).localeCompare(t)<=0).length;
+  return (cols[i]&&cols[i].label)||("Flush "+(i+1));
 }
 function lastFlushVolume(){
   const cols=PREFS.flushCols||[];
@@ -5526,14 +5640,18 @@ async function saveSessionFn(){
     const v=(el.value||"").trim();
     if(v)target[k]=v; else if(sessMode==="start")delete target[k];
   });
-  if(wantFlush&&fv){const col=await putFlush(flushHolder(homeDate(),true),ft,fv);msg+=` · ${col.label} ${fv} mL`;}
+  if(wantFlush&&fv)await putFlush(flushHolder(homeDate(),true),ft,fv);
+  await normalizeFlushes(homeDate());
+  if(wantFlush&&fv)msg+=` · ${flushLabelFor(homeDate(),ft,fv)} ${fv} mL`;
   await storeSet(KEYS.feeds,FEEDS);
   hideModal("sessionModal");renderFeeds();renderQuickFeed();toast(msg);
 }
 document.getElementById("saveSession").onclick=saveSessionFn;
 async function removeFlush(sid,cid){
   const e=FEEDS.find(x=>x.id===sid);if(!e||!e.flushes)return;
+  const d=e.date;
   delete e.flushes[cid];
+  await normalizeFlushes(d);
   pruneEmptyFeedRows();
   await storeSet(KEYS.feeds,FEEDS);renderFeeds();renderQuickFeed();toast("Flush removed");
 }
@@ -5556,7 +5674,7 @@ function openFlushModal(){
   const cur=homeDate();
   const t=flushHolder(cur,false);
   const cols=PREFS.flushCols||[];
-  const nextCol=cols.find(c=>t?!flushVal(t,c.id).v&&!flushVal(t,c.id).t:true);
+  const nextCol=nextFlushLabel(t);
   const lastVol=(()=>{for(const e of [...FEEDS].reverse())for(const c of cols){const v=flushVal(e,c.id).v;if(v)return v;}return"";})();
   document.getElementById("flushModalBody").innerHTML=`
     <div class="dose-modal-sub" style="margin-bottom:2px">${prettyDate(cur)}</div>
@@ -5565,7 +5683,7 @@ function openFlushModal(){
       <div class="field"><label>Time</label>${timeFieldHTML("fm_time",nowTime(),{aria:"Time"})}</div>
       <div class="field"><label>Volume (mL)</label><input type="number" min="0" step="5" id="fm_vol" value="${esc(lastVol)}" placeholder="mL"></div>
     </div>
-    <div class="hint">Recorded as ${nextCol?esc(nextCol.label):"a new flush column"} on this day's flush row, whether or not a session is running.</div>`;
+    <div class="hint">Recorded as ${esc(nextCol)} on this day's flush row, whether or not a session is running — the day's flushes stay in time order.</div>`;
   showModal("flushModal");
 }
 async function saveFlushFn(){
@@ -5573,11 +5691,11 @@ async function saveFlushFn(){
   const vol=(document.getElementById("fm_vol")||{}).value||"";
   if(!time&&!vol){toast("Enter a time or volume");return;}
   const cur=homeDate();
-  const t=flushHolder(cur,true);
-  const col=await putFlush(t,time,vol);
+  await putFlush(flushHolder(cur,true),time,vol);
+  await normalizeFlushes(cur);
   await storeSet(KEYS.feeds,FEEDS);
   hideModal("flushModal");renderFeeds();renderQuickFeed();
-  toast(`${col.label} logged${vol?" · "+vol+" mL":""}`);
+  toast(`${flushLabelFor(cur,time,vol)} logged${vol?" · "+vol+" mL":""}`);
 }
 document.getElementById("saveFlush").onclick=saveFlushFn;
 /* Home card chips split the session between two small editors:
@@ -6962,14 +7080,22 @@ function rateSummary(r,d){
    visit, which is why there was never any point offering a second one.
    Visits recorded before the link existed are adopted by the regimen that was
    active at the time — see adoptOrphanVisits(). */
+function regimenList(){return PREFS.regimens||(PREFS.regimens=[]);}
 function visitsSorted(rid){
   const id=(rid!==undefined)?rid:(regimen()||{}).id;
   return VISITS.filter(v=>v.rid===id).sort((a,b)=>(a.date||"").localeCompare(b.date||""));
 }
 function visitsOf(rid){return VISITS.filter(v=>v.rid===rid);}
+/* Adoption targets the FIRST regimen, not the active one. Using the active one
+   meant that adding a new course — which makes it active — handed it every
+   unlabelled visit from the old course, and a device still running an older
+   build pushes unlabelled visits on every sync, so this is not a one-off.
+   A visit pointing at a regimen that no longer exists is rehomed the same way
+   rather than silently vanishing from every sheet. */
 async function adoptOrphanVisits(){
-  const r=regimen(); if(!r) return false;
-  let n=0; VISITS.forEach(v=>{ if(!v.rid){ v.rid=r.id; n++; } });
+  const rs=regimenList(); if(!rs.length) return false;
+  const home=rs[0].id, known=new Set(rs.map(r=>r.id));
+  let n=0; VISITS.forEach(v=>{ if(!v.rid||!known.has(v.rid)){ v.rid=home; n++; } });
   if(!n) return false;
   await storeSet(KEYS.visits,VISITS);
   return true;
@@ -7237,12 +7363,20 @@ function nextCycleLabel(){
 function openVisit(id){
   editingVisit=id||null;
   const v=id?VISITS.find(x=>x.id===id):null;
-  const vs=visitsSorted();
+  const vs=visitsSorted(v?v.rid:undefined);
   const nextDate=v?v.date:(vs.length?addDaysISO(vs[vs.length-1].date,14):todayISO());
   document.getElementById("visitModalTitle").textContent=v?"Edit visit":"Add visit";
   document.getElementById("deleteVisitBtn").style.display=v?"inline-flex":"none";
+  /* Defaults to the course on screen. The picker only appears when there is
+     more than one, and it is here because a visit filed under the wrong course
+     disappears from the sheet you were looking at. */
+  const rs=regimenList(), curRid=v?(v.rid||(regimen()||{}).id):(regimen()||{}).id;
+  const ridField=rs.length>1?`
+      <div class="field fg-full"><label>Regimen</label>
+        <select id="vs_rid">${rs.map((x,i)=>`<option value="${x.id}"${x.id===curRid?" selected":""}>${esc(regimenLabel(x,i))}</option>`).join("")}</select></div>`:"";
   document.getElementById("visitModalBody").innerHTML=`
     <div class="form-grid ss-grid">
+      ${ridField}
       <div class="field"><label>Date</label><input type="date" id="vs_date" value="${esc(v?v.date:nextDate)}"></div>
       <div class="field"><label>Cycle and day</label><input id="vs_cycle" value="${esc(v?(v.cycle||""):nextCycleLabel())}" placeholder="C1D1"></div>
     </div>
@@ -7252,12 +7386,18 @@ function openVisit(id){
 async function saveVisitFn(){
   const date=(document.getElementById("vs_date").value||"").trim();
   const cycle=(document.getElementById("vs_cycle").value||"").trim();
+  const ridEl=document.getElementById("vs_rid");
+  const rid=(ridEl&&ridEl.value)||(regimen()||{}).id;
   if(!date){toast("Pick a date first");return;}
+  let moved=false;
   if(editingVisit){
-    VISITS=VISITS.map(v=>v.id===editingVisit?{...v,date,cycle}:v);
+    VISITS=VISITS.map(v=>{ if(v.id!==editingVisit)return v; moved=(v.rid!==rid); return {...v,rid,date,cycle}; });
   }else{
-    VISITS.push({id:uid(),rid:(regimen()||{}).id,date,cycle,doses:{},labs:{},notes:""});
+    VISITS.push({id:uid(),rid,date,cycle,doses:{},labs:{},notes:""});
   }
+  /* moving a visit to another course would drop it off the sheet in view, so
+     follow it there rather than leaving an empty column behind */
+  if(rid!==(regimen()||{}).id){ PREFS.activeRegimen=rid; await savePrefs(); renderTabs(); }
   await storeSet(KEYS.visits,VISITS);
   hideModal("visitModal");renderTreat();requestAnimationFrame(scrollTreatToLatest);toast(editingVisit?"Visit updated":"Visit added");
   editingVisit=null;
@@ -7274,7 +7414,6 @@ document.getElementById("deleteVisitBtn").onclick=deleteVisitFn;
 document.getElementById("addVisitBtn").onclick=()=>openVisit();
 
 /* ---- the regimen itself ---- */
-function regimenList(){return PREFS.regimens||(PREFS.regimens=[]);}
 function regimenLabel(r,i){return (r.name||"").trim()||("Regimen "+(i+1));}
 async function switchRegimen(id){
   if(!id||id===PREFS.activeRegimen)return;
