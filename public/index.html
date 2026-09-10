@@ -6209,13 +6209,9 @@ function boxStrip(dates,vals){
   return`<div class="table-scroll"><table class="ag strip"><thead><tr>${head}</tr></thead><tbody><tr>${cells}</tr></tbody></table></div>
     <div class="ag-key"><span><i class="ag-full"></i>yes</span><span><i class="ag-no"></i>no</span><span><i class="ag-0"></i>not logged</span></div>`;
 }
-/* a Yes/No column is one whose choices are exactly those two, however they were
-   typed in — custom columns count as much as the built-in bowel movement one */
-function isYesNoCol(c){
-  if(c.type!=="select")return false;
-  const o=(c.options||[]).map(x=>String(x).trim().toLowerCase()).sort();
-  return o.length===2&&o[0]==="no"&&o[1]==="yes";
-}
+/* Defers to isYesNo(), so rows created with the Yes / No type chart as well as
+   Choices rows whose only options are Yes and No (the built-in bowel movement one) */
+function isYesNoCol(c){return isYesNo(c);}
 const CHART_TINT={weight:"blue",pain:"rose",hr:"rose",temp:"orange",bs:"violet",o2:"teal",sleep:"violet"};
 /* Every chart the current data can support, in display order. Charts with
    nothing logged are left out entirely rather than drawn empty, so the picker
