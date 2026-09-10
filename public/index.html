@@ -344,9 +344,23 @@
   .give-btn.done{background:var(--chip);color:var(--green)}
   .give-btn svg{width:14px;height:14px}
 
-  .med-block{padding:8px 14px;border-bottom:1px solid var(--line-soft)}
+  .med-block{display:grid;grid-template-columns:minmax(0,1fr) auto auto;align-items:center;column-gap:8px;padding:8px 12px 8px 14px;border-bottom:1px solid var(--line-soft)}
   .med-block:last-child{border-bottom:none}
-  .mb-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}
+  .mb-doses{display:flex;flex-wrap:wrap;justify-content:flex-end;align-items:center;gap:4px;max-width:260px}
+  .mb-doses .lab{font-size:11px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-right:2px}
+  .med-block .give-btn.mb-add{width:30px;height:30px;padding:0;justify-content:center;flex:none}
+  .med-block .give-btn.mb-add svg{width:15px;height:15px}
+  @media (max-width:560px){.mb-doses{max-width:150px}}
+  .mb-prn{border-top:1px solid var(--line-soft)}
+  .mb-prn-tog{display:flex;align-items:center;gap:7px;width:100%;background:none;border:none;padding:9px 14px;font-family:inherit;font-size:12.5px;font-weight:600;color:var(--muted);cursor:pointer;text-align:left;min-width:0}
+  .mb-prn-tog svg{width:14px;height:14px;flex:none;transform:rotate(90deg);transition:transform .15s ease}
+  .mb-prn.closed .mb-prn-tog svg{transform:none}
+  .mb-prn-n{font-variant-numeric:tabular-nums;font-weight:500}
+  .mb-prn-names{font-weight:400;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;margin-left:4px}
+  .mb-prn-tog:hover{color:var(--teal-700)}
+  .mb-prn-tog:focus-visible{outline:2px solid var(--teal);outline-offset:-2px;border-radius:6px}
+  .mb-prn .med-block:first-of-type{border-top:1px solid var(--line-soft)}
+  @media (prefers-reduced-motion:reduce){.mb-prn-tog svg{transition:none}}
   .mb-name{font-weight:600;font-size:14px}
   .mb-name .mb-desc{font-weight:400;color:var(--muted);font-size:12px;margin-left:6px}
   .mb-sub{font-size:12px;color:var(--muted);margin-top:1px}
@@ -360,6 +374,9 @@
   .med-block .give-btn{padding:6px 12px;font-size:12.5px}
   .dose-chip button{border:none;background:none;color:var(--blue);cursor:pointer;display:grid;place-items:center;padding:0;width:15px;height:15px}
   .dose-chip button svg{width:13px;height:13px}
+  .dose-chip .half-tog{width:auto;min-width:18px;height:18px;padding:0 4px;border-radius:999px;font-size:12px;font-weight:700;line-height:1;color:var(--muted);box-shadow:inset 0 0 0 1px var(--line)}
+  .dose-chip .half-tog.on{background:var(--blue);color:var(--on-accent);box-shadow:none}
+  .dm-half{margin-top:10px;font-size:13px;font-weight:500}
   .dose-none{font-size:12px;color:var(--muted)}
   .sugg{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin-top:8px}
   .sugg-label{font-size:10.5px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);font-weight:700;margin-right:1px}
@@ -640,10 +657,21 @@
   .trend-card h4{font-size:13px;color:var(--muted);font-weight:600;margin:0 0 10px}
   .trend-val{font-family:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;font-size:20px;font-weight:600}
   .ch-card{margin-bottom:16px}
-  .ch-head{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:14px 18px 0}
-  .ch-head h3{font-size:16px}
+  .ch-sec-body{display:grid;grid-template-columns:repeat(var(--ch-cols,1),minmax(0,1fr));gap:14px;margin-bottom:16px;align-items:start}
+  .ch-sec-body .ch-card{margin-bottom:0;min-width:0}
+  .ch-card.ch-wide{grid-column:1/-1}
+  .ch-sec{margin-bottom:6px}
+  .ch-grp{display:flex;align-items:center;gap:8px;width:100%;background:none;border:none;border-bottom:1px solid var(--line-soft);padding:10px 2px;margin-bottom:12px;font-family:inherit;font-size:14px;font-weight:600;color:var(--ink);cursor:pointer;text-align:left}
+  .ch-grp svg{width:15px;height:15px;color:var(--muted);transform:rotate(90deg);transition:transform .15s ease}
+  .ch-sec.closed .ch-grp svg{transform:none}
+  .ch-grp-n{font-size:12px;font-weight:500;color:var(--muted);font-variant-numeric:tabular-nums}
+  .ch-grp:hover{color:var(--teal-700)}
+  .ch-grp:focus-visible{outline:2px solid var(--teal);outline-offset:2px;border-radius:6px}
+  @media (prefers-reduced-motion:reduce){.ch-grp svg{transition:none}}
+  .ch-head{display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:2px 10px;padding:11px 14px 0}
+  .ch-head h3{font-size:14.5px}
   .ch-sub{font-size:12px;color:var(--muted)}
-  .ch-body{padding:8px 14px 14px}
+  .ch-body{padding:4px 12px 10px}
   .ch-legend{display:flex;gap:14px;padding:4px 4px 6px;font-size:11.5px;color:var(--muted)}
   .ch-key{display:inline-flex;align-items:center;gap:5px}
   .ch-key i{width:10px;height:10px;border-radius:3px;display:inline-block}
@@ -657,17 +685,23 @@
   table.ag thead th.ag-name{background:var(--surface-2);z-index:3}
   .ag-exp{display:block;font-size:10px;color:var(--muted);font-weight:500}
   table.ag td{font-variant-numeric:tabular-nums;font-weight:600}
-  td.ag-full{background:var(--green-050);color:var(--green)}
-  td.ag-part{background:var(--amber-050);color:var(--amber)}
-  td.ag-prn{background:var(--blue-050);color:var(--blue)}
-  td.ag-0{color:var(--line)}
-  td.ag-no{background:var(--inset-2);color:var(--muted)}
+  /* Scoped to table.ag tbody so these outrank the grey cell rule above, which
+     used to win and leave only the coloured number showing. Fills mix each
+     accent into the surface so one strength reads in both themes; the -050
+     line is a fallback for browsers without color-mix. */
+  table.ag tbody td.ag-full{background:var(--green-050);background:color-mix(in srgb,var(--green) 26%,var(--surface));color:var(--green)}
+  table.ag tbody td.ag-part{background:var(--amber-050);background:color-mix(in srgb,var(--amber) 26%,var(--surface));color:var(--amber)}
+  table.ag tbody td.ag-prn{background:var(--blue-050);background:color-mix(in srgb,var(--blue) 26%,var(--surface));color:var(--blue)}
+  table.ag tbody td.ag-0{background:var(--inset);color:var(--line)}
+  table.ag tbody td.ag-no{background:var(--inset-2);color:var(--muted)}
   table.ag.strip td{min-width:30px;height:26px}
   .ag-key{display:flex;gap:14px;flex-wrap:wrap;padding:10px 4px 2px;font-size:11px;color:var(--muted)}
   .ag-key span{display:inline-flex;align-items:center;gap:5px}
   .ag-key i{width:12px;height:12px;border-radius:50%;display:inline-block;border:none}
-  .ag-key i.ag-full{background:var(--green-050)}.ag-key i.ag-part{background:var(--amber-050)}
-  .ag-key i.ag-prn{background:var(--blue-050)}.ag-key i.ag-0{background:var(--inset)}
+  .ag-key i.ag-full{background:var(--green-050);background:color-mix(in srgb,var(--green) 26%,var(--surface))}
+  .ag-key i.ag-part{background:var(--amber-050);background:color-mix(in srgb,var(--amber) 26%,var(--surface))}
+  .ag-key i.ag-prn{background:var(--blue-050);background:color-mix(in srgb,var(--blue) 26%,var(--surface))}
+  .ag-key i.ag-0{background:var(--inset)}
   .ag-key i.ag-no{background:var(--inset-2)}
   .ch-key .ch-rng{color:var(--muted);font-weight:400;margin-left:3px}
   .srch-count{font-size:11.5px;color:var(--muted);white-space:nowrap;padding-right:4px}
@@ -1091,6 +1125,12 @@
   #setOther{padding:8px 0 2px 20px}
   #setOther .switch{align-items:flex-start;gap:9px;font-size:13px;font-weight:400}
   #setOther .set-sub{font-size:11.5px;margin-top:1px}
+  .set-sex{display:flex;flex-wrap:wrap;align-items:center;gap:8px;font-size:13px}
+  .set-sex select{height:29px;padding:0 6px;font-size:12.5px;width:auto}
+  .set-sex .set-sub{flex-basis:100%;margin-top:0}
+  .ch-out{color:var(--rose);font-weight:600}
+  .set-wipe{border-top:1px solid var(--line-soft);margin-top:10px;padding-top:12px !important}
+  #wipeDeviceBtn{color:var(--rose);margin-bottom:6px}
   .dose-seg{display:inline-flex;border:1px solid var(--line);border-radius:999px;overflow:hidden;background:var(--surface)}
   .dose-seg button{font-size:12.5px;padding:5px 11px;border:none;background:none;color:var(--muted);cursor:pointer;font-family:inherit;font-weight:500}
   .dose-seg button+button{border-left:1px solid var(--line)}
@@ -1306,6 +1346,8 @@
   .hcell.sched{border:none;background:var(--amber-050)}
   .hcell.given{background:var(--given-bg);color:var(--given-ink)}
   .hcell.given:hover{background:var(--given-bg);color:var(--given-ink)}
+  /* half dose: the cell is filled corner to corner, only half way */
+  table.grid .hcell.given.half,table.grid td.offhr .hcell.given.half{background:linear-gradient(135deg,var(--given-bg) 50%,var(--cell-empty) 50%)}
   .dcell.has{background:var(--val-bg);color:var(--val-ink)}
   /* a value too wide for the tile shrinks rather than being cut off */
   .dcell.wide{font-size:9px;letter-spacing:-.02em}
@@ -1823,7 +1865,7 @@ window.Theme=(function(){
     <div id="chartsBody"></div>
 
     <div class="section-head" style="margin-top:26px">
-      <div><h2>Relationships</h2><p class="lead">Put several of these on one time axis to see how they move together. Cleared when you reload.</p></div>
+      <div><h2>Relationships</h2><p class="lead">Put several of these on one time axis to see how they move together. Kept for everyone until you press Clear.</p></div>
       <div class="head-actions">
         <div class="dropdown">
           <button class="btn btn-sm" id="relPickBtn"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" style="width:15px;height:15px"><polyline points="3 15 8 9 13 13 21 5"/></svg> Choose items</button>
@@ -1947,6 +1989,15 @@ window.Theme=(function(){
       </div>
       <div class="set-row" style="padding:5px 0">
         <label class="switch"><input type="checkbox" id="treatOnChk"> <span>Track treatment<span class="set-sub">Shows the Treatment tab. Nothing recorded is deleted when off.</span></span></label>
+      </div>
+      <div class="set-row set-sex" style="padding:5px 0">
+        <label for="patientSex">Patient sex</label>
+        <select id="patientSex"><option value="">Not set</option><option value="f">Female</option><option value="m">Male</option></select>
+        <span class="set-sub">Used only for chart normal ranges that differ by sex, such as hemoglobin.</span>
+      </div>
+      <div class="set-row set-wipe">
+        <button class="btn" id="wipeDeviceBtn" type="button">Clear data on this device</button>
+        <span class="set-sub">Removes everything this browser has saved, including appearance, and starts fresh. Your Google Drive copy is not touched.</span>
       </div>
     </div>
 
@@ -2623,6 +2674,8 @@ const DriveSync=(function(){
       if(!c){ by.set(k,e); return; }
       const win=((e._m||0)>=(c._m||0))?e:c, lose=(win===e)?c:e;
       win.times=[...new Set([].concat(win.times||[],lose.times||[]))].sort();
+      const hf=[...new Set([].concat(win.half||[],lose.half||[]))].filter(t=>win.times.includes(t));
+      if(hf.length) win.half=hf; else delete win.half;
       if(!win.notes && lose.notes) win.notes=lose.notes;
       by.set(k,win);
     });
@@ -2885,7 +2938,18 @@ const DriveSync=(function(){
   });
   window.addEventListener("pagehide",flushNow);
 
-  return {boot,connect,disconnect,syncNow,onBtn,reauth,queuePush,get suspended(){return S.suspended;},set suspended(v){S.suspended=v;}};
+  /* Used by "Clear data on this device". Halts every timer so nothing can write
+     back into storage mid-wipe, then revokes at Google (capped so a slow
+     network cannot hang the reset). Deliberately does not push: a wipe must
+     never reach the Drive file or other caregivers' devices. */
+  async function wipeLocal(){
+    S.suspended=true;
+    clearTimeout(pushTimer); pushTimer=null; clearTimeout(renewTimer); stopPoll();
+    const wasOn=connected || !!lsGet(ENABLED_FLAG);
+    connected=false; accessToken=null; tokenExpiry=0;
+    if(wasOn) await Promise.race([callTokenApi({action:"revoke"}).catch(()=>{}), new Promise(r=>setTimeout(r,3000))]);
+  }
+  return {boot,connect,disconnect,syncNow,onBtn,reauth,queuePush,wipeLocal,get suspended(){return S.suspended;},set suspended(v){S.suspended=v;}};
 })();
 
 let MEDS=[],MEDLOG=[],DAILY=[],NUTRITION=[],FEEDS=[],VISITS=[];
@@ -2917,7 +2981,7 @@ function mergeNotif(n){
     quiet:{from:hm(n.quiet&&n.quiet.from,d.quiet.from),to:hm(n.quiet&&n.quiet.to,d.quiet.to),
            doses:n.quiet?!!n.quiet.doses:d.quiet.doses}};
 }
-let PREFS={colvis:{meds:{},daily:{hr:false,temp:false,bs:false,o2:false,weight:false,pain:false,mood:false,sleep:false,bm:false,mobility:false},medlog:{},nutrition:{},feeds:{}},removedDaily:[],onceDaily:[],dailyOrder:[],nutriMode:"both",customCols:[],medCols:[],medlogCols:[],nutriCols:[],feedCols:[],flushCols:[],feedsOn:false,flushGoal:0,flushGoals:{},wideNotes:false,dailyView:"grid",dailyRange:"7",entryRange:"3",medRange:"1",doseRange:"7",nutriRange:"7",feedRange:"7",cardOrder:["meds","vitals","feeds","nutrition"],cardsOn:{meds:true,vitals:true,feeds:true,nutrition:true},quickNutri:["food","volume","calories","protein","sugar","fat"],quickFeed:["route","food","units","volume","rate","start","end"],regimens:[],activeRegimen:null,treatmentOn:"auto",chartsOn:{},notif:defaultNotif()};
+let PREFS={patientSex:"",relPicked:[],colvis:{meds:{},daily:{hr:false,temp:false,bs:false,o2:false,weight:false,pain:false,mood:false,sleep:false,bm:false,mobility:false},medlog:{},nutrition:{},feeds:{}},removedDaily:[],onceDaily:[],dailyOrder:[],nutriMode:"both",customCols:[],medCols:[],medlogCols:[],nutriCols:[],feedCols:[],flushCols:[],feedsOn:false,flushGoal:0,flushGoals:{},wideNotes:false,dailyView:"grid",dailyRange:"7",entryRange:"3",medRange:"1",doseRange:"7",nutriRange:"7",feedRange:"7",cardOrder:["meds","vitals","feeds","nutrition"],cardsOn:{meds:true,vitals:true,feeds:true,nutrition:true},quickNutri:["food","volume","calories","protein","sugar","fat"],quickFeed:["route","food","units","volume","rate","start","end"],regimens:[],activeRegimen:null,treatmentOn:"auto",chartsOn:{},notif:defaultNotif()};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 async function savePrefs(){await storeSet(KEYS.prefs,PREFS);}
 
@@ -3590,15 +3654,15 @@ function mlCustomCols(){return (PREFS.medlogCols||[]).map(c=>({key:"c_"+c.id,lab
 function allMedlogCols(){return MEDLOG_COLS.concat(mlCustomCols());}
 function visibleMedlogCols(){return allMedlogCols().filter(c=>c.always||PREFS.colvis.medlog[c.key]!==false);}
 function getLogEntry(date,medId){return MEDLOG.find(e=>e.date===date&&e.medId===medId);}
-function hourCellHTML(medId,date,times,sched,h){
+function hourCellHTML(medId,date,times,sched,h,entry){
   const inHour=times.filter(t=>parseInt(t.split(":")[0],10)===h).sort();
-  const isG=inHour.length>0,isS=sched.has(h);
+  const isG=inHour.length>0,isS=sched.has(h),isH=isG&&inHour.some(t=>isHalfDose(entry,t));
   let label="";
   if(inHour.length===1)label=":"+inHour[0].split(":")[1];
   else if(inHour.length===2)label=inHour.map(t=>t.split(":")[1]).join("/");
   else if(inHour.length>2)label="×"+inHour.length;
-  const title=isG?inHour.map(timePretty).join(", ")+" — tap to edit":to12h(h)+" — tap to log a dose";
-  return`<td class="${h<6||h>22?"offhr":""}" style="text-align:center;padding:3px 1px"><div class="hcell ${isG?"given":""} ${inHour.length>1?"multi":""} ${isS&&!isG?"sched":""}" role="button" tabindex="0" title="${title}" onclick="openDoseModal('${medId}','${date}',${h})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">${label}</div></td>`;
+  const title=isG?inHour.map(t=>timePretty(t)+(isHalfDose(entry,t)?" (half dose)":"")).join(", ")+" — tap to edit":to12h(h)+" — tap to log a dose";
+  return`<td class="${h<6||h>22?"offhr":""}" style="text-align:center;padding:3px 1px"><div class="hcell ${isG?"given":""} ${isH?"half":""} ${inHour.length>1?"multi":""} ${isS&&!isG?"sched":""}" role="button" tabindex="0" title="${title}" onclick="openDoseModal('${medId}','${date}',${h})" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();this.click();}">${label}</div></td>`;
 }
 function hourHeadHTML(){
   let s="";
@@ -3614,7 +3678,7 @@ function gridRowHTML(m,date,labelHTML,alt){
   const times=entry&&entry.times?[...entry.times].sort():[];
   const sched=parseScheduledHours(m.scheduled);
   let cells="";
-  for(let h=0;h<24;h++)cells+=hourCellHTML(m.id,date,times,sched,h);
+  for(let h=0;h<24;h++)cells+=hourCellHTML(m.id,date,times,sched,h,entry);
   return`<tr class="${alt?"alt":""}"><td class="stick">${labelHTML}</td>${cells}<td class="gridnote"><input placeholder="Notes" value="${esc(entry?entry.notes:"")}" onchange="setDoseNote('${date}','${m.id}',this.value)"></td></tr>`;
 }
 let logMedSel=null; // array of med ids; null means "all active" (the default)
@@ -3714,10 +3778,18 @@ function renderLogGrid(){
 }
 async function ensureEntry(date,medId){let e=getLogEntry(date,medId);if(!e){const m=MEDS.find(x=>x.id===medId);e={id:uid(),date,medId,med:m?m.medication:"",dose:m?m.dosage:"",times:[],notes:""};MEDLOG.push(e);}if(!e.times)e.times=[];return e;}
 function cleanLog(){MEDLOG=MEDLOG.filter(x=>(x.times&&x.times.length>0)||(x.notes&&x.notes.trim()));}
-async function addDoseTime(date,medId,time){if(!time)return;const e=await ensureEntry(date,medId);if(!e.times.includes(time)){e.times.push(time);e.times.sort();}await storeSet(KEYS.medlog,MEDLOG);renderLogGrid();renderLogTable();renderHome();}
-async function removeDoseTime(date,medId,time){const e=getLogEntry(date,medId);if(!e)return;e.times=(e.times||[]).filter(t=>t!==time);cleanLog();await storeSet(KEYS.medlog,MEDLOG);renderLogGrid();renderLogTable();renderHome();}
+/* Half doses: `half` lists which of an entry's times were half a dose. Entries
+   without it are all full, so older data needs no migration. A half counts as
+   0.5 toward the day's expected doses wherever doses are totalled. */
+function isHalfDose(e,t){return !!(e&&Array.isArray(e.half)&&e.half.includes(t));}
+function doseAmt(e){return e&&e.times?e.times.reduce((a,t)=>a+(isHalfDose(e,t)?0.5:1),0):0;}
+function fmtAmt(n){const w=Math.floor(n),h=n-w>=0.25;return w||h?(w?String(w):"")+(h?"\u00bd":""):"0";}
+function doseTimeLabel(e,t){return timePretty(t)+(isHalfDose(e,t)?" \u00bd":"");}
+async function addDoseTime(date,medId,time,half){if(!time)return;const e=await ensureEntry(date,medId);if(!e.times.includes(time)){e.times.push(time);e.times.sort();}if(half){e.half=Array.isArray(e.half)?e.half:[];if(!e.half.includes(time))e.half.push(time);}await storeSet(KEYS.medlog,MEDLOG);renderLogGrid();renderLogTable();renderHome();}
+async function removeDoseTime(date,medId,time){const e=getLogEntry(date,medId);if(!e)return;e.times=(e.times||[]).filter(t=>t!==time);if(Array.isArray(e.half)){e.half=e.half.filter(t=>t!==time);if(!e.half.length)delete e.half;}cleanLog();await storeSet(KEYS.medlog,MEDLOG);renderLogGrid();renderLogTable();renderHome();}
+async function toggleHalfDose(date,medId,time){const e=getLogEntry(date,medId);if(!e||!(e.times||[]).includes(time))return;const on=isHalfDose(e,time);e.half=(Array.isArray(e.half)?e.half:[]).filter(t=>t!==time);if(!on)e.half.push(time);if(!e.half.length)delete e.half;await storeSet(KEYS.medlog,MEDLOG);renderLogGrid();renderLogTable();renderHome();}
 async function setDoseNote(date,medId,note){const e=await ensureEntry(date,medId);e.notes=note;cleanLog();await storeSet(KEYS.medlog,MEDLOG);renderLogTable();}
-function mlCell(e,key){switch(key){case"date":return`<span class="num">${shortDate(e.date)}</span>`;case"med":return`<span class="cell-strong">${esc(e.med)}</span>`;case"dose":return`<span class="num">${esc(e.dose||"—")}</span>`;case"times":{const h=(e.times||[]).slice().sort().map(timePretty).join(", ");return`<span class="num">${h||"—"}</span>`;}case"notes":return esc(e.notes||"");}return"";}
+function mlCell(e,key){switch(key){case"date":return`<span class="num">${shortDate(e.date)}</span>`;case"med":return`<span class="cell-strong">${esc(e.med)}</span>`;case"dose":return`<span class="num">${esc(e.dose||"—")}</span>`;case"times":{const h=(e.times||[]).slice().sort().map(t=>doseTimeLabel(e,t)).join(", ");return`<span class="num">${h||"—"}</span>`;}case"notes":return esc(e.notes||"");}return"";}
 /* Custom Medication Log fields are edited in place, the same way Notes is. */
 function mlCustomInput(e,c){
   const v=getVal(e,c)||"";
@@ -3748,7 +3820,7 @@ function renderLogTable(){
       ||(a.med||"").localeCompare(b.med||""));
   const cntEl=document.getElementById("rangeCount");
   if(cntEl){
-    const doses=rows.reduce((s,e)=>s+((e.times||[]).length),0);
+    const doses=rows.reduce((s,e)=>s+doseAmt(e),0);
     const days=new Set(rows.map(e=>e.date)).size;
     let scope;
     if(from&&to)scope=(from===to)?prettyDate(from):`${shortDate(from)} – ${shortDate(to)}`;
@@ -4969,11 +5041,15 @@ function renderHomeMeds(){
   const cur=homeDate(),isToday=cur===todayISO();
   const dl=document.getElementById("homeMedsDate");if(dl)dl.textContent=prettyDate(cur);
   if(!active.length){wrap.innerHTML=`<div class="empty" style="padding:34px"><p style="margin:0 0 12px">No active medications yet.</p><button class="btn btn-primary btn-sm" onclick="switchTab('meds')">Add a medication</button></div>`;return;}
-  wrap.innerHTML=active.map(m=>{
-    const given=doseTimesOn(m.id,cur);
-    const givenHTML=given.length
-      ? (isToday?"":`<span class="lab">${shortDate(cur)}</span>`)+given.map(t=>`<span class="dose-chip">${timePretty(t)}<button onclick="removeDoseTime('${cur}','${m.id}','${t}')" title="Remove this dose">${ICO.x}</button></span>`).join("")
-      : `<span class="dose-none">No doses logged${isToday?" yet today":" on this day"}</span>`;
+  /* One block per med: name and details on the left, the day's doses and a
+     round + on the right. PRN meds with nothing given on this day tuck into a
+     collapsible "As needed" group at the bottom; once dosed they sit with the
+     rest in their usual order. */
+  const idle=m=>m.prn&&!doseTimesOn(m.id,cur).length;
+  const main=active.filter(m=>!idle(m)),prnIdle=active.filter(idle);
+  const block=m=>{
+    const given=doseTimesOn(m.id,cur),gEntry=getLogEntry(cur,m.id);
+    const chips=given.map(t=>`<span class="dose-chip">${doseTimeLabel(gEntry,t)}<button onclick="removeDoseTime('${cur}','${m.id}','${t}')" title="Remove this dose">${ICO.x}</button></span>`).join("");
     const on=k=>PREFS.colvis.meds[k]!==false;
     const bits=[];
     if(on("dose")&&m.dosage)bits.push(esc(m.dosage));
@@ -4983,14 +5059,28 @@ function renderHomeMeds(){
        fields — those stay on the Meds tab */
     const showDesc=on("description")&&m.description;
     return`<div class="med-block">
-      <div class="mb-top">
+      <div class="mb-info">
         <div class="mb-name">${esc(m.medication)}${m.prn?' <span class="pill prn" style="font-size:10px">PRN</span>':""}${showDesc?`<span class="mb-desc">${esc(m.description)}</span>`:""}</div>
-        <button class="give-btn" onclick="openDoseModal('${m.id}','${cur}')">+ Dose</button>
+        ${bits.length?`<div class="mb-sub">${bits.join(" · ")}</div>`:""}
       </div>
-      ${bits.length?`<div class="mb-sub">${bits.join(" · ")}</div>`:""}
-      <div class="dose-today">${givenHTML}</div>
-    </div>`;}).join("");
+      <div class="mb-doses">${!isToday&&given.length?`<span class="lab">${shortDate(cur)}</span>`:""}${chips}</div>
+      <button class="give-btn mb-add" onclick="openDoseModal('${m.id}','${cur}')" title="Add a dose" aria-label="Add a dose of ${esc(m.medication)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg></button>
+    </div>`;
+  };
+  let html=main.map(block).join("");
+  if(prnIdle.length){
+    const shut=homePrnCollapsed();
+    html+=`<div class="mb-prn ${shut?"closed":""}">
+      <button type="button" class="mb-prn-tog" aria-expanded="${!shut}" onclick="toggleHomePrn()"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg><span>As needed</span><span class="mb-prn-n">${prnIdle.length}</span>${shut?`<span class="mb-prn-names">${prnIdle.map(m=>esc(m.medication)).join(", ")}</span>`:""}</button>
+      ${shut?"":prnIdle.map(block).join("")}
+    </div>`;
+  }
+  wrap.innerHTML=html;
 }
+/* collapsed by default; remembered per device */
+const HOME_PRN_KEY="caretrends:homePrnCollapsed";
+function homePrnCollapsed(){try{return localStorage.getItem(HOME_PRN_KEY)!=="0";}catch(e){return true;}}
+function toggleHomePrn(){try{localStorage.setItem(HOME_PRN_KEY,homePrnCollapsed()?"0":"1");}catch(e){}renderHomeMeds();}
 
 /* ---- Add Dose modal ---- */
 let doseMedId=null,doseDate=null;
@@ -5008,7 +5098,7 @@ function openDoseModal(medId,date,hour){
   const hint=hasHour
     ? "Logging into the "+to12h(hour)+" hour — set the exact minutes."
     : (isToday?"Defaults to right now — change it to log an earlier dose.":"Logging to "+prettyDate(doseDate)+".");
-  const existingHTML=inHour.length?`<div class="dm-section"><div class="dm-lab">Already logged in this hour</div><div class="dm-hourlist">${inHour.map(t=>`<span class="dose-chip">${timePretty(t)}<button onclick="removeDoseTime('${doseDate}','${medId}','${t}');hideModal('doseModal');" title="Remove this dose">${ICO.x}</button></span>`).join("")}</div></div>`:"";
+  const existingHTML=inHour.length?`<div class="dm-section"><div class="dm-lab">Already logged in this hour</div><div class="dm-hourlist">${inHour.map(t=>{const hf=isHalfDose(entry,t);return`<span class="dose-chip">${timePretty(t)}<button class="half-tog ${hf?"on":""}" aria-pressed="${hf}" onclick="toggleHalfDose('${doseDate}','${medId}','${t}').then(()=>openDoseModal('${medId}','${doseDate}',${hour}))" title="${hf?"Half dose — tap to mark as full":"Mark as half dose"}">\u00bd</button><button onclick="removeDoseTime('${doseDate}','${medId}','${t}');hideModal('doseModal');" title="Remove this dose">${ICO.x}</button></span>`;}).join("")}</div></div>`:"";
   document.getElementById("doseModalBody").innerHTML=`
     <div class="dose-modal-med">${esc(m.medication)}${m.prn?' <span class="pill prn" style="font-size:10px">PRN</span>':""}</div>
     <div class="dose-modal-sub">${esc(m.dosage||"")}${m.description?" · "+esc(m.description):""}</div>
@@ -5016,6 +5106,7 @@ function openDoseModal(medId,date,hour){
     <div class="dm-section"><div class="dm-lab">Time given</div>
       ${timeFieldHTML("dm_time",defTime,{cls:"tf-lg",aria:"Time given"})}
       <div class="hint">${hint}</div>
+      <label class="switch dm-half"><input type="checkbox" id="dm_half"> <span>Half dose</span></label>
     </div>
     ${existingHTML}
     ${chipRow("Recent times",s.recent)}
@@ -5035,8 +5126,9 @@ async function saveDoseFn(){
   const entry=getLogEntry(doseDate,doseMedId);
   const existing=entry&&entry.times?entry.times:[];
   if(existing.includes(t)){toast("A dose is already logged at "+timePretty(t));return;}
-  await addDoseTime(doseDate,doseMedId,t);
-  hideModal("doseModal");toast("Dose logged at "+timePretty(t));
+  const half=!!(document.getElementById("dm_half")||{}).checked;
+  await addDoseTime(doseDate,doseMedId,t,half);
+  hideModal("doseModal");toast((half?"Half dose":"Dose")+" logged at "+timePretty(t));
 }
 document.getElementById("confirmYes").onclick=()=>settleConfirm(true);
 document.getElementById("confirmNo").onclick=()=>settleConfirm(false);
@@ -5910,11 +6002,18 @@ function syncChartColors(){
   CH.rose=v("--rose","#b23a3a");
   CH.line=v("--line","#d6e0e0");
   CH.mute=v("--muted","#5f7681");
+  CH.surface=v("--surface","#ffffff");
 }
 syncChartColors();
 /* A narrow viewBox means less down-scaling, so axis labels stay readable.
    Returns the drawing width and a matching label size. */
+/* Set by the Charts tab to the inner width of the card being drawn, so the
+   viewBox matches its real size: text stays one size whether the chart is
+   full width or in a two or three column grid. Null elsewhere. */
+let CH_TARGET_W=null;
 function chartGeom(){
+  if(CH_TARGET_W){const w=Math.max(260,Math.round(CH_TARGET_W));
+    return{w,fs:11,padL:34,padB:24,h:Math.round(Math.min(210,Math.max(140,w*0.3+24)))};}
   const w=window.innerWidth;
   if(w<560)return{w:340,fs:11,padL:30,padB:22};
   if(w<900)return{w:520,fs:10,padL:34,padB:24};
@@ -5932,7 +6031,7 @@ function chartDates(){
 }
 /* vertical bars with an optional target line */
 function barChart(dates,values,color,unit,goal){
-  const g=chartGeom(),w=g.w,padB=g.padB,fs=g.fs,h=Math.round(w*0.24)+40,padT=12;
+  const g=chartGeom(),w=g.w,padB=g.padB,fs=g.fs,h=g.h||Math.round(w*0.24)+40,padT=12;
   let padL=g.padL;
   const vals=values.map(v=>Number(v)||0);
   const max=Math.max(goal||0,...vals,1);
@@ -5956,11 +6055,14 @@ function barChart(dates,values,color,unit,goal){
 }
 /* one or more lines, gaps where there's no reading */
 function lineChart(dates,series,unit){
-  const g=chartGeom(),w=g.w,padB=g.padB,fs=g.fs,h=Math.round(w*0.26)+40,padT=12;
+  const g=chartGeom(),w=g.w,padB=g.padB,fs=g.fs,h=g.h||Math.round(w*0.26)+40,padT=12;
   let padL=g.padL;
   const all=series.flatMap(s=>s.values).filter(v=>v!==null&&!isNaN(v));
   if(all.length<1)return`<div class="empty" style="padding:26px"><p style="margin:0">Not enough data yet.</p></div>`;
-  let min=Math.min(...all),max=Math.max(...all);
+  const rng=s=>(s.range&&s.range.lo!=null)?s.range:null;
+  /* the band is part of the scale, so it is always fully in view */
+  const bounds=series.flatMap(s=>rng(s)?[s.range.lo,s.range.hi]:[]);
+  let min=Math.min(...all,...bounds),max=Math.max(...all,...bounds);
   if(min===max){min-=1;max+=1;}
   const pad=(max-min)*0.12;min-=pad;max+=pad;
   padL=Math.max(padL,gutter([0,.5,1].map(f=>String(rnd(min+(max-min)*f,1))),fs));
@@ -5970,13 +6072,27 @@ function lineChart(dates,series,unit){
   [0,0.5,1].forEach(f=>{const y=h-padB-f*(h-padB-padT);
     grid+=`<line x1="${padL}" y1="${y}" x2="${w-4}" y2="${y}" stroke="${CH.line}" stroke-width="1"/>
            <text x="${padL-5}" y="${y+fs/3}" font-size="${fs}" fill="${CH.mute}" text-anchor="end">${rnd(min+(max-min)*f,1)}</text>`;});
+  let bands="";
+  series.forEach(s=>{const r=rng(s);if(!r)return;
+    const y1=Y(r.hi),y2=Y(r.lo),x1=padL,x2=w-4;
+    bands+=`<rect x="${x1}" y="${y1.toFixed(1)}" width="${x2-x1}" height="${(y2-y1).toFixed(1)}" fill="${s.color}" opacity="0.1"><title>Normal ${rangeText(r)}${unit||""}</title></rect>`
+      +[y1,y2].map(y=>`<line x1="${x1}" y1="${y.toFixed(1)}" x2="${x2}" y2="${y.toFixed(1)}" stroke="${s.color}" stroke-width="1" stroke-dasharray="3 3" opacity="0.45"/>`).join("");
+  });
   let paths="",dots="";
+  const rDot=fs>9?2:2.6;
   series.forEach(s=>{
-    let d="",open=false;
+    let d="",open=false;const r=rng(s);
     s.values.forEach((v,i)=>{
-      if(v===null||isNaN(v)){open=false;return;}
+      /* days with no reading are skipped rather than breaking the line, so
+         each reading joins the next one logged */
+      if(v===null||isNaN(v))return;
       d+=`${open?"L":"M"}${X(i).toFixed(1)},${Y(v).toFixed(1)} `;open=true;
-      dots+=`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${fs>9?2:2.6}" fill="${s.color}"><title>${shortDate(dates[i])}: ${rnd(v,1)}${unit||""}</title></circle>`;
+      const out=outOfRange(v,r),tip=`${shortDate(dates[i])}: ${rnd(v,1)}${unit||""}${out?(v>r.hi?" (above normal)":" (below normal)"):""}`;
+      /* out of range: a larger hollow ring, so it still stands out on a line
+         that is already drawn in rose */
+      dots+=out
+        ?`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${(rDot+1.6).toFixed(1)}" fill="${CH.surface}" stroke="${CH.rose}" stroke-width="2"><title>${tip}</title></circle>`
+        :`<circle cx="${X(i).toFixed(1)}" cy="${Y(v).toFixed(1)}" r="${rDot}" fill="${s.color}"><title>${tip}</title></circle>`;
     });
     if(d)paths+=`<path d="${d.trim()}" fill="none" stroke="${s.color}" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>`;
   });
@@ -5985,7 +6101,7 @@ function lineChart(dates,series,unit){
   dates.forEach((d,i)=>{if(i%every===0)
     labels+=`<text x="${X(i).toFixed(1)}" y="${h-8}" font-size="${fs}" fill="${CH.mute}" text-anchor="middle">${shortDate(d).replace(/^\w+ /,"")}</text>`;});
   const legend=series.filter(s=>s.name).map(s=>`<span class="ch-key"><i style="background:${s.color}"></i>${esc(s.name)}</span>`).join("");
-  return(legend?`<div class="ch-legend">${legend}</div>`:"")+`<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">${grid}${paths}${dots}${labels}</svg>`;
+  return(legend?`<div class="ch-legend">${legend}</div>`:"")+`<svg viewBox="0 0 ${w} ${h}" style="width:100%;height:auto">${grid}${bands}${paths}${dots}${labels}</svg>`;
 }
 function expectedPerDay(m){
   const t=parseScheduledHours(m.scheduled).size;
@@ -5996,7 +6112,9 @@ function expectedPerDay(m){
   if(f.includes("twice"))return 2;
   return 1;
 }
-/* medications down the side, dates across the top, dose counts in the cells */
+/* medications down the side, dates across the top, dose amounts in the cells.
+   Half doses count 0.5, so a day is only full when the amount reaches the
+   expected number of doses. */
 function adherenceGrid(dates,rows){
   const head=dates.map(d=>`<th class="ag-d"><span class="ag-dow">${new Date(...d.split("-").map((x,k)=>k===1?x-1:+x)).toLocaleDateString(undefined,{weekday:"narrow"})}</span><span class="ag-dd">${d.slice(8)}</span></th>`).join("");
   const body=rows.map(r=>{
@@ -6006,15 +6124,78 @@ function adherenceGrid(dates,rows){
       if(r.m.prn)cls=v?"ag-prn":"ag-0";
       else if(v>=exp)cls="ag-full";
       else if(v>0)cls="ag-part";
-      return`<td class="${cls}" title="${shortDate(dates[i])} · ${esc(r.m.medication)}: ${v} dose${v===1?"":"s"}${r.m.prn?"":` of ${exp}`}">${v||""}</td>`;
+      return`<td class="${cls}" title="${shortDate(dates[i])} · ${esc(r.m.medication)}: ${fmtAmt(v)} dose${v===1?"":"s"}${r.m.prn?"":` of ${exp}`}">${v?fmtAmt(v):""}</td>`;
     }).join("");
     return`<tr><td class="ag-name">${esc(r.m.medication)}${r.m.prn?' <span class="pill prn" style="font-size:9.5px">PRN</span>':""}<span class="ag-exp">${r.m.prn?"as needed":exp+"/day"}</span></td>${cells}</tr>`;
   }).join("");
   return`<div class="table-scroll"><table class="ag"><thead><tr><th class="ag-name">Medication</th>${head}</tr></thead><tbody>${body}</tbody></table></div>
     <div class="ag-key"><span><i class="ag-full"></i>full dose</span><span><i class="ag-part"></i>partial</span><span><i class="ag-prn"></i>PRN taken</span><span><i class="ag-0"></i>none</span></div>`;
 }
-function chartCard(title,sub,inner){
-  return`<div class="card ch-card"><div class="ch-head"><h3>${title}</h3>${sub?`<span class="ch-sub">${sub}</span>`:""}</div><div class="ch-body">${inner}</div></div>`;
+/* ---------- reference ranges ----------
+   Only readings with a recognised adult standard get a normal band; anything
+   else is drawn without one. Labs are matched by name, and only when their
+   unit is blank or one the range is written in, so a lab kept in other units
+   never gets a misleading band. A lab's own printed range is the final word. */
+const VITAL_RANGES={
+  sys:{lo:90,hi:120,units:["mmhg"]},dia:{lo:60,hi:80,units:["mmhg"]},
+  hr:{lo:60,hi:100,units:["bpm"]},o2:{lo:95,hi:100,units:["%"]},
+  temp:{lo:97,hi:99.5,units:["°f","f"],alt:{lo:36.1,hi:37.5,units:["°c","c"]}},
+  bs:{lo:70,hi:140,units:["mg/dl"],alt:{lo:3.9,hi:7.8,units:["mmol/l"]}}
+};
+const CBC_U=["k/ul","k/mm3","10^3/ul","x10^3/ul","10*3/ul","thou/ul","10^9/l","x10^9/l"];
+const LYTE_U=["mmol/l","meq/l"],MGDL=["mg/dl"],GDL=["g/dl"],UL=["u/l","iu/l"];
+const LAB_RANGES=[
+  {n:["wbc","whitebloodcells","whitebloodcell","whitecount","leukocytes"],u:CBC_U,lo:4.0,hi:11.0},
+  {n:["anc","absoluteneutrophilcount","absoluteneutrophils","neutrophils","neutrophilsabsolute"],u:CBC_U,lo:1.5,hi:8.0},
+  {n:["platelets","platelet","plateletcount","plt"],u:CBC_U,lo:150,hi:400},
+  {n:["hgb","hemoglobin","haemoglobin","hb"],u:GDL,sex:{f:[12.0,15.5],m:[13.5,17.5]}},
+  {n:["hct","hematocrit","haematocrit"],u:["%"],sex:{f:[36,46],m:[41,53]}},
+  {n:["sodium","na"],u:LYTE_U,lo:135,hi:145},
+  {n:["potassium","k"],u:LYTE_U,lo:3.5,hi:5.0},
+  {n:["chloride","cl"],u:LYTE_U,lo:98,hi:107},
+  {n:["bicarbonate","bicarb","co2","totalco2","hco3"],u:LYTE_U,lo:22,hi:29},
+  {n:["bun","ureanitrogen","bloodureanitrogen"],u:MGDL,lo:7,hi:20},
+  {n:["creatinine","creat","cr"],u:MGDL,sex:{f:[0.6,1.1],m:[0.7,1.3]}},
+  {n:["glucose","glu"],u:MGDL,lo:70,hi:99},
+  {n:["calcium","ca"],u:MGDL,lo:8.5,hi:10.5},
+  {n:["magnesium","mg"],u:MGDL,lo:1.7,hi:2.2},
+  {n:["albumin","alb"],u:GDL,lo:3.5,hi:5.0},
+  {n:["totalprotein","protein"],u:GDL,lo:6.0,hi:8.3},
+  {n:["bilirubin","totalbilirubin","tbili","bili"],u:MGDL,lo:0.1,hi:1.2},
+  {n:["alt","sgpt"],u:UL,lo:7,hi:56},
+  {n:["ast","sgot"],u:UL,lo:10,hi:40},
+  {n:["alkphos","alkalinephosphatase","alp"],u:UL,lo:44,hi:147}
+];
+const normName=x=>String(x||"").toLowerCase().replace(/[^a-z0-9]/g,"");
+const normUnit=x=>String(x||"").toLowerCase().replace(/µ|μ/g,"u").replace(/×/g,"x").replace(/\s+/g,"");
+const unitOk=(unit,list)=>!normUnit(unit)||list.includes(normUnit(unit));
+/* returns {lo,hi} | {needsSex:true} | null */
+function vitalRange(key,unit){
+  const r=VITAL_RANGES[key];if(!r)return null;
+  if(r.alt&&normUnit(unit)&&r.alt.units.includes(normUnit(unit)))return{lo:r.alt.lo,hi:r.alt.hi};
+  return unitOk(unit,r.units)?{lo:r.lo,hi:r.hi}:null;
+}
+function labRange(label,unit){
+  const k=normName(label),r=LAB_RANGES.find(x=>x.n.includes(k));
+  if(!r||!unitOk(unit,r.u))return null;
+  if(r.sex){const v=r.sex[PREFS.patientSex];return v?{lo:v[0],hi:v[1]}:{needsSex:true};}
+  return{lo:r.lo,hi:r.hi};
+}
+const outOfRange=(v,r)=>r&&r.lo!=null&&v!==null&&!isNaN(v)&&(v<r.lo||v>r.hi);
+function rangeText(r){return r?`${rnd(r.lo,2)}–${rnd(r.hi,2)}`:"";}
+/* card subtitle with the normal range and how many readings fall outside it */
+function rangeSub(base,parts){
+  const live=parts.filter(p=>p.r&&!p.r.needsSex);
+  let out=base||"";
+  if(parts.some(p=>p.r&&p.r.needsSex))return(out?out+" · ":"")+"set patient sex in Settings for a normal range";
+  if(!live.length)return out;
+  out+=(out?" · ":"")+"normal "+live.map(p=>rangeText(p.r)).join(" / ");
+  const n=live.reduce((a,p)=>a+p.vals.filter(v=>outOfRange(v,p.r)).length,0);
+  if(n)out+=` · <span class="ch-out">${n} out of range</span>`;
+  return out;
+}
+function chartCard(title,sub,inner,cls){
+  return`<div class="card ch-card ${cls||""}"><div class="ch-head"><h3>${title}</h3>${sub?`<span class="ch-sub">${sub}</span>`:""}</div><div class="ch-body">${inner}</div></div>`;
 }
 /* a single row of boxes across the dates — for Yes/No columns, where a line
    would be meaningless but "which days" is the whole question */
@@ -6047,10 +6228,10 @@ function chartCatalog(){
 
   const medsShown=medsSorted(MEDS.filter(m=>m.active));
   if(medsShown.length){
-    const doseGrid=medsShown.map(m=>({m,vals:dates.map(d=>{const le=getLogEntry(d,m.id);return le&&le.times?le.times.length:0;})}));
+    const doseGrid=medsShown.map(m=>({m,vals:dates.map(d=>doseAmt(getLogEntry(d,m.id)))}));
     const totalDoses=doseGrid.reduce((a,r)=>a+r.vals.reduce((x,y)=>x+y,0),0);
     out.push({id:"adherence",title:"Medication adherence",group:"Medications",
-      sub:`${totalDoses} dose${totalDoses===1?"":"s"} over ${dates.length} days`,
+      sub:`${fmtAmt(totalDoses)} dose${totalDoses===1?"":"s"} over ${dates.length} days`,
       build:()=>adherenceGrid(dates,doseGrid)});
     /* doses per day, one series per drug. A count belongs on the relationship
        overlay but not as a card of its own — the grid already says it better. */
@@ -6067,8 +6248,9 @@ function chartCatalog(){
     const sysV=dayVals(DAILY,l=>{const a=l.map(e=>Number(e.sys)).filter(Boolean);return a.length?avg(a):null;});
     const diaV=dayVals(DAILY,l=>{const a=l.map(e=>Number(e.dia)).filter(Boolean);return a.length?avg(a):null;});
     if(sysV.some(v=>v!==null)){
-      out.push({id:"bp",title:"Blood pressure",sub:"daily average",group:"Daily Log",
-        build:()=>lineChart(dates,[{name:"Systolic",values:sysV,color:CH.teal},{name:"Diastolic",values:diaV,color:CH.blue}]," mmHg")});
+      const rS=vitalRange("sys",""),rD=vitalRange("dia","");
+      out.push({id:"bp",title:"Blood pressure",sub:rangeSub("daily average",[{r:rS,vals:sysV},{r:rD,vals:diaV}]),group:"Daily Log",
+        build:()=>lineChart(dates,[{name:"Systolic",values:sysV,color:CH.teal,range:rS},{name:"Diastolic",values:diaV,color:CH.blue,range:rD}]," mmHg")});
       out.push({id:"bp_sys",title:"Systolic",group:"Daily Log",relOnly:true,daily:true,values:sysV,unit:"mmHg"});
       out.push({id:"bp_dia",title:"Diastolic",group:"Daily Log",relOnly:true,daily:true,values:diaV,unit:"mmHg"});
     }
@@ -6099,9 +6281,10 @@ function chartCatalog(){
     /* "(lbs)" is a unit worth suffixing onto every tick; "(0-10)" is a scale, and
        reads as nonsense appended to a number */
     const suffix=(unit&&!/\d/.test(unit))?" "+unit:"";
-    out.push({id:"d_"+c.key,title:label,group:"Daily Log",sub:unit||(c.key==="weight"?"last reading each day":"daily average"),
+    const vr=vitalRange(c.key,unit);
+    out.push({id:"d_"+c.key,title:label,group:"Daily Log",sub:rangeSub(esc(unit)||(c.key==="weight"?"last reading each day":"daily average"),[{r:vr,vals}]),
       daily:true,values:vals,unit:(unit&&!/\d/.test(unit))?unit:"",
-      build:()=>lineChart(dates,[{values:vals,color}],suffix)});
+      build:()=>lineChart(dates,[{values:vals,color,range:vr}],suffix)});
   });
 
   const calV=dates.map(d=>NUTRITION.filter(e=>e.date===d).reduce((a,e)=>a+(Number(e.calories)||0),0));
@@ -6124,8 +6307,9 @@ function chartCatalog(){
       (rgm.labs||[]).forEach((l,i)=>{
         const vals=vs.map(v=>Number((v.labs&&v.labs[l.id])||0)||null);
         if(!vals.some(x=>x))return;
-        out.push({id:"lab_"+l.id,title:l.label,group:"Treatment",sub:l.unit||"per visit",
-          build:()=>lineChart(vdates,[{name:l.label,color:palette[i%palette.length],values:vals}],l.unit?" "+l.unit:"")});
+        const lr=labRange(l.label,l.unit);
+        out.push({id:"lab_"+l.id,title:l.label,group:"Treatment",sub:rangeSub(esc(l.unit||"per visit"),[{r:lr,vals}]),
+          build:()=>lineChart(vdates,[{name:l.label,color:palette[i%palette.length],values:vals,range:lr&&!lr.needsSex?lr:null}],l.unit?" "+l.unit:"")});
       });
     }
   }
@@ -6173,7 +6357,7 @@ function overlayChart(dates,series){
   const shared=units.length===1&&units[0]&&!bars.length;
   if(shared)return lineChart(dates,lines.map(s=>({name:s.name,color:s.color,values:s.values}))," "+units[0]);
 
-  const g=chartGeom(),w=g.w,padB=g.padB,fs=g.fs,h=Math.round(w*0.26)+40,padT=12,padL=10;
+  const g=chartGeom(),w=g.w,padB=g.padB,fs=g.fs,h=g.h||Math.round(w*0.26)+40,padT=12,padL=10;
   const span=w-padL-8;
   const base=h-padB, top=padT;
   /* a group of bars is centred on its date, so the first and last would hang off
@@ -6230,7 +6414,12 @@ function overlayChart(dates,series){
     <div class="hint">Each series is scaled to its own range so the shapes line up — the height of one says nothing about the height of another. Point and bar values are exact.${crowded?" More than three bar series is unreadable, so they are drawn as lines here.":""}</div>`;
 }
 /* deliberately not in PREFS: these are a scratch view, gone on reload */
+/* The comparison is a shared pref, so every caregiver sees the same one and it
+   survives reloads until Clear is pressed. The whole selection syncs as one
+   value (last change wins), so a Clear on one device clears it everywhere.
+   Picks whose chart is gone for now are kept and simply skipped. */
 let relPicked=[];
+function setRelPicked(next){relPicked=next;PREFS.relPicked=next.slice();savePrefs();renderRelationships();}
 function relCandidates(list){return list.filter(c=>c.daily);}
 function relKind(id){const p=relPicked.find(x=>x.id===id);return p?p.kind:null;}
 function buildRelMenu(cands){
@@ -6249,9 +6438,8 @@ function buildRelMenu(cands){
   menu.querySelectorAll("button[data-rel]").forEach(b=>b.addEventListener("click",()=>{
     const id=b.dataset.rel,kind=b.dataset.kind;
     /* tapping the choice already in force removes the series */
-    relPicked=relKind(id)===kind?relPicked.filter(x=>x.id!==id)
-      :relPicked.filter(x=>x.id!==id).concat([{id,kind}]);
-    renderRelationships();
+    setRelPicked(relKind(id)===kind?relPicked.filter(x=>x.id!==id)
+      :relPicked.filter(x=>x.id!==id).concat([{id,kind}]));
   }));
 }
 function renderRelationships(list){
@@ -6268,8 +6456,9 @@ function renderRelationships(list){
   const palette=[CH.teal,CH.blue,CH.orange,CH.violet,CH.green,CH.rose];
   const series=picked.map((c,i)=>({name:c.title,unit:c.unit||"",values:c.values,
     kind:c.kind,counts:!!c.counts,color:palette[i%palette.length]}));
-  body.innerHTML=chartCard(picked.map(c=>c.title).join(" · "),`${picked.length} series`,
-    overlayChart(chartDates(),series));
+  CH_TARGET_W=(body.clientWidth||window.innerWidth)-26;
+  const svg=overlayChart(chartDates(),series);CH_TARGET_W=null;
+  body.innerHTML=chartCard(picked.map(c=>c.title).join(" · "),`${picked.length} series`,svg);
 }
 function renderCharts(){
   const box=document.getElementById("chartsBody");if(!box)return;
@@ -6277,11 +6466,38 @@ function renderCharts(){
   const cards=list.filter(c=>!c.relOnly);
   buildChartMenu(cards);
   const on=cards.filter(c=>chartShown(c.id));
-  box.innerHTML=on.map(c=>chartCard(c.title,c.sub,c.build())).join("")
+  /* sections follow the tab each chart's data comes from, in catalog order.
+     A collapsed section is never built, so it costs nothing to keep closed. */
+  const shut=chartsCollapsed();
+  const groups=[...new Set(on.map(c=>c.group||"Other"))];
+  /* 1 or 2 columns by the space available (3 was too cramped); wide cards span the row */
+  const bw=box.clientWidth||window.innerWidth,GAP=14,CARD_PAD=26;
+  const cols=bw>=700?2:1;
+  box.style.setProperty("--ch-cols",cols);
+  const colW=(bw-GAP*(cols-1))/cols;
+  const WIDE=new Set(["adherence"]);
+  const draw=c=>{CH_TARGET_W=(WIDE.has(c.id)?bw:colW)-CARD_PAD;
+    const html=chartCard(c.title,c.sub,c.build(),WIDE.has(c.id)?"ch-wide":"");CH_TARGET_W=null;return html;};
+  box.innerHTML=groups.map(g=>{
+    const inG=on.filter(c=>(c.group||"Other")===g),closed=shut.includes(g);
+    return`<section class="ch-sec ${closed?"closed":""}">
+      <button type="button" class="ch-grp" aria-expanded="${!closed}" data-grp="${esc(g)}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 6 15 12 9 18"/></svg><span>${esc(g)}</span><span class="ch-grp-n">${inG.length}</span></button>
+      ${closed?"":`<div class="ch-sec-body">${inG.map(draw).join("")}</div>`}
+    </section>`;
+  }).join("")
     ||`<div class="empty" style="padding:40px"><p style="margin:0">${cards.length?"No charts selected — pick some from the Charts menu above.":"Nothing logged yet."}</p></div>`;
+  box.querySelectorAll(".ch-grp").forEach(b=>b.onclick=()=>toggleChartGroup(b.dataset.grp));
   renderRelationships(list);
 }
-document.getElementById("relClearBtn").onclick=()=>{relPicked=[];renderRelationships();};
+/* which chart sections are minimised — kept per device, like the hours view */
+const CH_SHUT_KEY="caretrends:chartsCollapsed";
+function chartsCollapsed(){try{const v=JSON.parse(localStorage.getItem(CH_SHUT_KEY)||"[]");return Array.isArray(v)?v:[];}catch(e){return[];}}
+function toggleChartGroup(g){
+  const cur=chartsCollapsed(),next=cur.includes(g)?cur.filter(x=>x!==g):cur.concat(g);
+  try{localStorage.setItem(CH_SHUT_KEY,JSON.stringify(next));}catch(e){}
+  renderCharts();
+}
+document.getElementById("relClearBtn").onclick=()=>setRelPicked([]);
 document.getElementById("chartRange").addEventListener("change",renderCharts);
 function renderSummary(){
   const body=document.getElementById("sumBody");
@@ -6301,7 +6517,7 @@ function renderSummary(){
   const dia=dEntries.map(e=>Number(e.dia)).filter(Boolean);
   const weights=dEntries.map(e=>Number(e.weight)).filter(Boolean);
   const pains=dEntries.map(e=>Number(e.pain)).filter(v=>!isNaN(v));
-  const dosesGiven=days.reduce((a,d)=>a+activeMeds.reduce((b,m)=>{const le=getLogEntry(d,m.id);return b+(le&&le.times?le.times.length:0);},0),0);
+  const dosesGiven=fmtAmt(days.reduce((a,d)=>a+activeMeds.reduce((b,m)=>b+doseAmt(getLogEntry(d,m.id)),0),0));
   const medDays=days.filter(d=>activeMeds.some(m=>{const le=getLogEntry(d,m.id);return le&&le.times&&le.times.length;})).length;
   const flushTot=days.reduce((a,d)=>a+flushTotalForDate(d),0);
 
@@ -6323,13 +6539,13 @@ function renderSummary(){
 
   /* ---------- medications ---------- */
   const medRows=activeMeds.map(m=>{
-    const times=days.flatMap(d=>{const le=getLogEntry(d,m.id);return le&&le.times?le.times.map(t=>({d,t})):[];})
+    const times=days.flatMap(d=>{const le=getLogEntry(d,m.id);return le&&le.times?le.times.map(t=>({d,t,le})):[];})
       .sort((a,b)=>(a.d+a.t).localeCompare(b.d+b.t));
-    return{m,times};
+    return{m,times,amt:times.reduce((a,o)=>a+(isHalfDose(o.le,o.t)?0.5:1),0)};
   });
   const medHtml=activeMeds.length?`<div class="table-scroll"><table class="compact"><thead><tr><th>Medication</th><th>Dose</th><th>Doses</th><th>Times given</th></tr></thead><tbody>${
-    medRows.map(x=>`<tr><td class="cell-strong">${esc(x.m.medication)}${x.m.prn?' <span class="pill prn" style="font-size:10px">PRN</span>':""}</td><td class="num">${esc(x.m.dosage||"—")}</td><td class="num">${x.times.length||"—"}</td><td class="num">${
-      x.times.length?x.times.map(o=>(sumRange==="day"?"":shortDate(o.d)+" ")+timePretty(o.t)).join(", "):'<span style="color:var(--muted)">not logged</span>'}</td></tr>`).join("")}</tbody></table></div>`:none("No active medications.");
+    medRows.map(x=>`<tr><td class="cell-strong">${esc(x.m.medication)}${x.m.prn?' <span class="pill prn" style="font-size:10px">PRN</span>':""}</td><td class="num">${esc(x.m.dosage||"—")}</td><td class="num">${x.times.length?fmtAmt(x.amt):"—"}</td><td class="num">${
+      x.times.length?x.times.map(o=>(sumRange==="day"?"":shortDate(o.d)+" ")+doseTimeLabel(o.le,o.t)).join(", "):'<span style="color:var(--muted)">not logged</span>'}</td></tr>`).join("")}</tbody></table></div>`:none("No active medications.");
 
   /* ---------- daily log ---------- */
   const dCols=visibleDailyCols().filter(c=>c.key!=="date"||sumRange!=="day");
@@ -6374,7 +6590,7 @@ function renderSummary(){
         sys:avg(de.map(e=>Number(e.sys)).filter(Boolean)),
         w:(()=>{const a=de.map(e=>Number(e.weight)).filter(Boolean);return a.length?a[a.length-1]:null;})(),
         cal:ne.length?rnd(ne.reduce((a,e)=>a+(Number(e.calories)||0),0),1):null,
-        doses:activeMeds.reduce((b,m)=>{const le=getLogEntry(d,m.id);return b+(le&&le.times?le.times.length:0);},0)};
+        doses:activeMeds.reduce((b,m)=>b+doseAmt(getLogEntry(d,m.id)),0)};
     });
     const trend=(t,series,color,unit)=>{const last=[...series].reverse().find(v=>v!==null&&!isNaN(v));
       return`<div class="card card-pad trend-card"><h4>${t}</h4><div class="trend-val" style="margin-bottom:8px">${last!=null?last:"—"}${last!=null&&unit?` <span style="font-size:12px;color:var(--muted)">${unit}</span>`:""}</div>${sparkline(series,color)}</div>`;};
@@ -6755,9 +6971,9 @@ async function exportExcel(){
       const r=[e.date,e.med,e.dose];
       for(let h=0;h<24;h++){
         const inH=times.filter(t=>parseInt(t.split(":")[0],10)===h).sort();
-        r.push(inH.length?inH.map(t=>t.split(":")[1]).join("/"):"");
+        r.push(inH.length?inH.map(t=>t.split(":")[1]+(isHalfDose(e,t)?"\u00bd":"")).join("/"):"");
       }
-      r.push(times.length);r.push(times.map(timePretty).join(", "));r.push(e.notes||"");
+      r.push(doseAmt(e));r.push(times.map(t=>doseTimeLabel(e,t)).join(", "));r.push(e.notes||"");
       lCustom.forEach(c=>r.push(getVal(e,c)??""));
       return r;
     });
@@ -6958,7 +7174,11 @@ async function exportExcel(){
   toast("Excel file downloaded");
 }
 
-function seedDaily(){return[{id:uid(),date:"2026-08-09",time:"08:00",sys:"128",dia:"78",hr:"72",temp:"98.4",bs:"110",o2:"97",weight:"165",pain:"2",fin:"8",fout:"",symptom:"Mild dizziness on standing",severity:"Mild",mood:"Content",sleep:"7",bm:"Yes",mobility:"Walked to kitchen",notes:"Rested, resolved in 5 min",custom:{}}];}
+function seedDaily(){return[];}
+/* Older builds seeded one sample Daily Log row. Each device gave it its own id,
+   so match on content instead; running on every load also catches copies that
+   arrive from other devices through sync. */
+function isSampleDaily(e){return !!e&&e.date==="2026-08-09"&&e.symptom==="Mild dizziness on standing"&&e.notes==="Rested, resolved in 5 min";}
 async function loadGlobalsFromStore(){
   MEDS=await storeGet(KEYS.meds)||[];
   MEDLOG=await storeGet(KEYS.medlog)||[];
@@ -6969,11 +7189,14 @@ async function loadGlobalsFromStore(){
   let fmig=false;FEEDS.forEach(e=>{if(e.flushes)Object.keys(e.flushes).forEach(k=>{if(typeof e.flushes[k]==="string"){e.flushes[k]={t:e.flushes[k],v:""};fmig=true;}});});
   if(fmig)await storeSet(KEYS.feeds,FEEDS);
   let migrated=false;MEDLOG.forEach(e=>{if(e.hours&&!e.times){e.times=Object.keys(e.hours).map(h=>pad(parseInt(h,10))+":00").sort();delete e.hours;migrated=true;}if(!e.times)e.times=[];});if(migrated)await storeSet(KEYS.medlog,MEDLOG);
-  let d=await storeGet(KEYS.daily);if(d===null){d=seedDaily();await storeSet(KEYS.daily,d);}DAILY=d;
+  let d=await storeGet(KEYS.daily);if(d===null){d=seedDaily();await storeSet(KEYS.daily,d);}
+  if(Array.isArray(d)&&d.some(isSampleDaily)){d=d.filter(e=>!isSampleDaily(e));await storeSet(KEYS.daily,d);}
+  DAILY=d;
   const p=await storeGet(KEYS.prefs);
-  if(p){PREFS={colvis:Object.assign({meds:{},daily:{},medlog:{}},p.colvis||{}),customCols:Array.isArray(p.customCols)?p.customCols:[],medCols:Array.isArray(p.medCols)?p.medCols:[],medlogCols:Array.isArray(p.medlogCols)?p.medlogCols:[],removedDaily:Array.isArray(p.removedDaily)?p.removedDaily:[],onceDaily:Array.isArray(p.onceDaily)?p.onceDaily:[],dailyOrder:Array.isArray(p.dailyOrder)?p.dailyOrder:[],nutriMode:["both","nutrition","fluids"].includes(p.nutriMode)?p.nutriMode:"both",nutriCols:Array.isArray(p.nutriCols)?p.nutriCols:[],feedCols:Array.isArray(p.feedCols)?p.feedCols:[],flushCols:Array.isArray(p.flushCols)?p.flushCols:[],feedsOn:!!p.feedsOn,flushGoal:Number(p.flushGoal)||0,flushGoals:(p.flushGoals&&typeof p.flushGoals==="object")?p.flushGoals:{},wideNotes:!!p.wideNotes,dailyView:["day","grid"].includes(p.dailyView)?p.dailyView:"grid",dailyRange:p.dailyRange||"7",entryRange:p.entryRange||"3",medRange:p.medRange||"1",doseRange:p.doseRange||"7",nutriRange:p.nutriRange||"7",feedRange:p.feedRange||"7",cardOrder:Array.isArray(p.cardOrder)?p.cardOrder:["meds","vitals","feeds","nutrition"],cardsOn:Object.assign({meds:true,vitals:true,feeds:true,nutrition:true},p.cardsOn||{}),quickNutri:Array.isArray(p.quickNutri)?p.quickNutri:["food","volume","calories","protein","sugar","fat"],quickFeed:Array.isArray(p.quickFeed)?p.quickFeed:["route","food","units","volume","rate","start","end"],regimens:Array.isArray(p.regimens)?p.regimens:[],activeRegimen:p.activeRegimen||null,treatmentOn:["on","off"].includes(p.treatmentOn)?p.treatmentOn:"auto",chartsOn:(p.chartsOn&&typeof p.chartsOn==="object")?p.chartsOn:{},notif:mergeNotif(p.notif)};
+  if(p){PREFS={colvis:Object.assign({meds:{},daily:{},medlog:{}},p.colvis||{}),customCols:Array.isArray(p.customCols)?p.customCols:[],medCols:Array.isArray(p.medCols)?p.medCols:[],medlogCols:Array.isArray(p.medlogCols)?p.medlogCols:[],removedDaily:Array.isArray(p.removedDaily)?p.removedDaily:[],onceDaily:Array.isArray(p.onceDaily)?p.onceDaily:[],dailyOrder:Array.isArray(p.dailyOrder)?p.dailyOrder:[],nutriMode:["both","nutrition","fluids"].includes(p.nutriMode)?p.nutriMode:"both",nutriCols:Array.isArray(p.nutriCols)?p.nutriCols:[],feedCols:Array.isArray(p.feedCols)?p.feedCols:[],flushCols:Array.isArray(p.flushCols)?p.flushCols:[],feedsOn:!!p.feedsOn,flushGoal:Number(p.flushGoal)||0,flushGoals:(p.flushGoals&&typeof p.flushGoals==="object")?p.flushGoals:{},wideNotes:!!p.wideNotes,dailyView:["day","grid"].includes(p.dailyView)?p.dailyView:"grid",dailyRange:p.dailyRange||"7",entryRange:p.entryRange||"3",medRange:p.medRange||"1",doseRange:p.doseRange||"7",nutriRange:p.nutriRange||"7",feedRange:p.feedRange||"7",cardOrder:Array.isArray(p.cardOrder)?p.cardOrder:["meds","vitals","feeds","nutrition"],cardsOn:Object.assign({meds:true,vitals:true,feeds:true,nutrition:true},p.cardsOn||{}),quickNutri:Array.isArray(p.quickNutri)?p.quickNutri:["food","volume","calories","protein","sugar","fat"],quickFeed:Array.isArray(p.quickFeed)?p.quickFeed:["route","food","units","volume","rate","start","end"],regimens:Array.isArray(p.regimens)?p.regimens:[],activeRegimen:p.activeRegimen||null,treatmentOn:["on","off"].includes(p.treatmentOn)?p.treatmentOn:"auto",chartsOn:(p.chartsOn&&typeof p.chartsOn==="object")?p.chartsOn:{},patientSex:["f","m"].includes(p.patientSex)?p.patientSex:"",relPicked:Array.isArray(p.relPicked)?p.relPicked.filter(x=>x&&typeof x.id==="string"&&(x.kind==="line"||x.kind==="bar")):[],notif:mergeNotif(p.notif)};
     PREFS.colvis.meds=PREFS.colvis.meds||{};PREFS.colvis.daily=PREFS.colvis.daily||{};PREFS.colvis.medlog=PREFS.colvis.medlog||{};}
   PREFS.colvis.nutrition=PREFS.colvis.nutrition||{};PREFS.colvis.feeds=PREFS.colvis.feeds||{};
+  relPicked=(PREFS.relPicked||[]).slice();
 }
 /* Tab count and chart geometry both depend on viewport width, so redo them
    when it changes — rotation included. */
@@ -8034,6 +8257,16 @@ const Reminders=(()=>{
 
 /* ---------- Settings modal ---------- */
 function openSettings(){syncSettingsUI();showModal("settingsModal");}
+async function clearDeviceData(){
+  const ok=await askConfirm("This removes all Care Trends data, settings and appearance saved in this browser, and disconnects Google Drive here.\nYour Google Drive copy and other caregivers' devices are not affected. Reconnecting Drive later will bring that data back.\nThis can't be undone. Export to Excel first if you want a copy.","Clear data on this device?","Clear everything");
+  if(!ok)return;
+  try{await DriveSync.wipeLocal();}catch(e){console.warn(e);}
+  /* no awaits from here to the reload, so nothing can write in between */
+  [localStorage,sessionStorage].forEach(st=>{
+    try{Object.keys(st).filter(k=>k.startsWith("caretrends:")).forEach(k=>st.removeItem(k));}catch(e){}
+  });
+  location.replace(location.pathname+location.search);
+}
 function toggleOther(){
   const b=document.getElementById("othBtn"),d=document.getElementById("setOther");
   const open=d.style.display!=="none";
@@ -8066,6 +8299,7 @@ function syncSettingsUI(){
   el("nQuietTo").value=cfg.quiet.to;
   el("nQuietDoses").checked=cfg.quiet.doses;
   el("feedsOn").checked=!!PREFS.feedsOn;
+  el("patientSex").value=PREFS.patientSex||"";
   el("treatOnChk").checked=treatmentOn();
 }
 async function setNotif(fn){
@@ -8078,6 +8312,8 @@ async function setNotif(fn){
 function wireSettings(){
   const el=id=>document.getElementById(id);
   el("othBtn").addEventListener("click",toggleOther);
+  el("wipeDeviceBtn").addEventListener("click",clearDeviceData);
+  el("patientSex").addEventListener("change",async e=>{PREFS.patientSex=e.target.value;await savePrefs();if(typeof activeTab!=="undefined"&&activeTab==="charts")renderCharts();});
 
   el("notifOn").addEventListener("change",async e=>{
     const on=e.target.checked;
