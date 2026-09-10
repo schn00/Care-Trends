@@ -1173,8 +1173,14 @@
      The native input is present but visually gone — it exists only so
      showPicker() has something to attach to. */
   .tfield{position:relative;display:block}
-  .tfield .tf-txt{width:100%;padding-right:32px}
-  .tfield.tf-lg .tf-txt{padding:10px 32px 10px 12px;border:1px solid var(--line);border-radius:9px}
+  .tfield .tf-txt{width:100%;padding-right:70px}
+  .tfield.tf-lg .tf-txt{padding:10px 70px 10px 12px;border:1px solid var(--line);border-radius:9px}
+  .tfield .tf-ap{position:absolute;right:31px;top:50%;transform:translateY(-50%);
+    border:none;background:var(--inset);color:var(--ink);border-radius:999px;
+    padding:0 7px;height:22px;font-size:10.5px;font-weight:700;letter-spacing:.03em;
+    cursor:pointer;transition:.14s}
+  .tfield .tf-ap:hover:not(:disabled){background:var(--teal);color:var(--on-accent)}
+  .tfield .tf-ap:disabled{color:var(--muted);background:none;cursor:default}
   .tfield .tf-pick{position:absolute;right:5px;top:50%;transform:translateY(-50%);
     width:24px;height:24px;display:grid;place-items:center;border:none;background:none;
     color:var(--muted);border-radius:7px;cursor:pointer;padding:0}
@@ -2929,6 +2935,20 @@ function weekdayLabel(iso){if(!iso)return"—";const[y,m,d]=iso.split("-").map(N
    still opens the native picker for anyone who prefers it.
    The canonical HH:MM lives in a hidden input carrying the field's real id, so
    every existing reader of that id keeps working unchanged. */
+/* An hour of 1-12 with no am/pm written against it could be either reading.
+   Rather than always taking it literally, settle on whichever of the two sits
+   closer to the current time on the 24-hour circle: at 3pm "5" means 17:00, at
+   8am it means 05:00. A two-digit hour written with its leading zero ("0830",
+   "08:30") is read as 24-hour and left alone, which is the way to force a
+   literal morning time late in the day. The box shows the result the moment
+   you leave it and the AM/PM button flips it, so a wrong pick is one tap. */
+function resolveMeridiem(h,m,literal){
+  if(literal||h<1||h>12)return h;
+  const alt=h===12?0:h+12;
+  const n=new Date(),now=n.getHours()*60+n.getMinutes();
+  const gap=t=>{const d=Math.abs(t-now);return Math.min(d,1440-d);};
+  return gap(alt*60+m)<gap(h*60+m)?alt:h;
+}
 function parseTimeInput(raw,fallback){
   let x=String(raw||"").trim().toLowerCase();
   if(!x)return "";
@@ -2937,24 +2957,22 @@ function parseTimeInput(raw,fallback){
   else if(/(^|[^a-z])a\.?m?\.?$/.test(x)||/\bam\b/.test(x)){pm=false;}
   x=x.replace(/[^0-9:.]/g,"").replace(/\./g,":");
   if(!x)return fallback||"";
-  let h,m;
+  let h,m,lit=false;
   if(x.includes(":")){
     const [a,b]=x.split(":");
-    h=parseInt(a,10); m=parseInt(b||"0",10);
+    h=parseInt(a,10); m=parseInt(b||"0",10); lit=/^0\d/.test(a);
   }else if(x.length<=2){
-    h=parseInt(x,10); m=0;
+    h=parseInt(x,10); m=0; lit=/^0\d/.test(x);
   }else{
     /* 830 -> 8:30, 1245 -> 12:45; the minutes are always the last two digits */
-    h=parseInt(x.slice(0,x.length-2),10); m=parseInt(x.slice(-2),10);
+    const hs=x.slice(0,x.length-2);
+    h=parseInt(hs,10); m=parseInt(x.slice(-2),10); lit=/^0\d/.test(hs);
   }
   if(!isFinite(h)||!isFinite(m))return fallback||"";
   if(m>59)return fallback||"";
   if(pm===true&&h<12)h+=12;
-  if(pm===false&&h===12)h=0;
-  /* No guessing at am/pm when the entry does not say. In a dose log a wrong
-     guess moves a dose by twelve hours, and "5" is read as 05:00 rather than
-     inferred — type 5p or 17 for the evening. The box shows the result the
-     moment you leave it, so a mistake is visible immediately. */
+  else if(pm===false&&h===12)h=0;
+  else if(pm===null)h=resolveMeridiem(h,m,lit);
   if(h>23)return fallback||"";
   return pad(h)+":"+pad(m);
 }
@@ -2967,6 +2985,8 @@ function timeFieldHTML(id,value,opts){
       placeholder="${esc(o.placeholder||"8:30 AM")}" inputmode="numeric" autocomplete="off"
       ${o.title?`title="${esc(o.title)}"`:""} ${o.aria?`aria-label="${esc(o.aria)}"`:""}
       onblur="commitTimeField('${id}')" onkeydown="timeFieldKey(event,'${id}')">
+    <button type="button" class="tf-ap" id="${id}__ap" tabindex="-1" title="Switch AM/PM"
+      ${v?"":"disabled"} onclick="toggleMeridiem('${id}')">${v?(Number(v.split(":")[0])<12?"AM":"PM"):"--"}</button>
     <button type="button" class="tf-pick" tabindex="-1" title="Pick a time"
       onclick="openTimePicker('${id}')">${ICO.clockSm}</button>
     <input type="time" class="tf-native" id="${id}__n" tabindex="-1" aria-hidden="true" value="${esc(v)}"
@@ -2979,8 +2999,23 @@ function setTimeField(id,hhmm){
   hid.value=hhmm||"";
   if(txt)txt.value=hhmm?timePretty(hhmm):"";
   if(nat)nat.value=hhmm||"";
+  const ap=document.getElementById(id+"__ap");
+  if(ap){ap.textContent=hhmm?(Number(hhmm.split(":")[0])<12?"AM":"PM"):"--";ap.disabled=!hhmm;}
   hid.dispatchEvent(new Event("input",{bubbles:true}));
   hid.dispatchEvent(new Event("change",{bubbles:true}));
+}
+/* The typed box takes a numeric keypad, which on a phone has no letters on it —
+   so "5p" cannot be typed there at all. This button is the way to say PM: it
+   flips the committed time by twelve hours and shows which half it is in. */
+function toggleMeridiem(id){
+  const hid=document.getElementById(id),txt=document.getElementById(id+"__t");
+  if(!hid)return;
+  let v=hid.value;
+  /* tapping it straight after typing, before the box has been left */
+  if(txt&&txt.value)v=parseTimeInput(txt.value,v);
+  if(!v)return;
+  const [h,m]=v.split(":").map(Number);
+  setTimeField(id,pad((h+12)%24)+":"+pad(m));
 }
 function commitTimeField(id){
   const hid=document.getElementById(id),txt=document.getElementById(id+"__t");
@@ -5103,11 +5138,13 @@ function parseTimeText(s){
   if(apm){ap=apm[1][0];s=s.slice(0,-apm[1].length);}
   if(!/^\d{1,4}$/.test(s.replace(":","")))return null;
   let h,mi;
-  if(s.includes(":")){const[a,b]=s.split(":");h=parseInt(a,10);mi=parseInt(b||"0",10);}
-  else if(s.length<=2){h=parseInt(s,10);mi=0;}
-  else{h=parseInt(s.slice(0,s.length-2),10);mi=parseInt(s.slice(-2),10);}
+  let lit=false;
+  if(s.includes(":")){const[a,b]=s.split(":");h=parseInt(a,10);mi=parseInt(b||"0",10);lit=/^0\d/.test(a);}
+  else if(s.length<=2){h=parseInt(s,10);mi=0;lit=/^0\d/.test(s);}
+  else{const hs=s.slice(0,s.length-2);h=parseInt(hs,10);mi=parseInt(s.slice(-2),10);lit=/^0\d/.test(hs);}
   if(isNaN(h)||isNaN(mi)||mi>59)return null;
   if(ap){if(h<1||h>12)return null;if(ap==="p"&&h!==12)h+=12;if(ap==="a"&&h===12)h=0;}
+  else h=resolveMeridiem(h,mi,lit);
   if(h>23)return null;
   return pad(h)+":"+pad(mi);
 }
