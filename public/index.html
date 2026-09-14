@@ -1694,6 +1694,18 @@ window.Theme=(function(){
           <div class="menu" id="medFilterMenu"></div>
         </div>
       </div>
+      <div class="field-inline" id="logGroupWrap" style="display:none"><label for="logGroup">Group by</label>
+        <select class="days-sel" id="logGroup">
+          <option value="day">Day</option>
+          <option value="med">Medication</option>
+        </select>
+      </div>
+      <div class="field-inline"><label for="logShow">Rows</label>
+        <select class="days-sel" id="logShow">
+          <option value="all">All meds</option>
+          <option value="given">Only given</option>
+        </select>
+      </div>
       <div class="legend">
         <span><span class="lg-swatch lg-given"></span> Given</span>
         <span><span class="lg-swatch lg-sched"></span> Scheduled</span>
@@ -2981,7 +2993,7 @@ function mergeNotif(n){
     quiet:{from:hm(n.quiet&&n.quiet.from,d.quiet.from),to:hm(n.quiet&&n.quiet.to,d.quiet.to),
            doses:n.quiet?!!n.quiet.doses:d.quiet.doses}};
 }
-let PREFS={patientSex:"",relPicked:[],colvis:{meds:{},daily:{hr:false,temp:false,bs:false,o2:false,weight:false,pain:false,mood:false,sleep:false,bm:false,mobility:false},medlog:{},nutrition:{},feeds:{}},removedDaily:[],onceDaily:[],dailyOrder:[],nutriMode:"both",customCols:[],medCols:[],medlogCols:[],nutriCols:[],feedCols:[],flushCols:[],feedsOn:false,flushGoal:0,flushGoals:{},wideNotes:false,dailyView:"grid",dailyRange:"7",entryRange:"3",medRange:"1",doseRange:"7",nutriRange:"7",feedRange:"7",cardOrder:["meds","vitals","feeds","nutrition"],cardsOn:{meds:true,vitals:true,feeds:true,nutrition:true},quickNutri:["food","volume","calories","protein","sugar","fat"],quickFeed:["route","food","units","volume","rate","start","end"],regimens:[],activeRegimen:null,treatmentOn:"auto",chartsOn:{},notif:defaultNotif()};
+let PREFS={patientSex:"",relPicked:[],colvis:{meds:{},daily:{hr:false,temp:false,bs:false,o2:false,weight:false,pain:false,mood:false,sleep:false,bm:false,mobility:false},medlog:{},nutrition:{},feeds:{}},removedDaily:[],onceDaily:[],dailyOrder:[],nutriMode:"both",customCols:[],medCols:[],medlogCols:[],nutriCols:[],feedCols:[],flushCols:[],feedsOn:false,flushGoal:0,flushGoals:{},wideNotes:false,dailyView:"grid",dailyRange:"7",entryRange:"3",medRange:"1",medGroup:"day",medShow:"all",doseRange:"7",nutriRange:"7",feedRange:"7",cardOrder:["meds","vitals","feeds","nutrition"],cardsOn:{meds:true,vitals:true,feeds:true,nutrition:true},quickNutri:["food","volume","calories","protein","sugar","fat"],quickFeed:["route","food","units","volume","rate","start","end"],regimens:[],activeRegimen:null,treatmentOn:"auto",chartsOn:{},notif:defaultNotif()};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 async function savePrefs(){await storeSet(KEYS.prefs,PREFS);}
 
@@ -3701,6 +3713,7 @@ function renderMedFilter(){
   let html=`<div class="mtitle">Show medications</div>
     <button class="mpreset" onclick="setMedSel(activeIds())">Active medications</button>
     <button class="mpreset" onclick="setMedSel(allIds())">All medications (incl. inactive)</button>
+    <button class="mpreset" onclick="setMedSel([])">Clear selection (none)</button>
     <div class="msep"></div>`;
   html+=MEDS.length
     ? medsSorted().map(m=>`<label><input type="checkbox" ${sel.includes(m.id)?"checked":""} data-medid="${m.id}"> ${esc(m.medication)}${m.active?"":'<span class="minactive">inactive</span>'}</label>`).join("")
@@ -3747,6 +3760,29 @@ function syncRangeUI(){
     if(t&&!t.value)t.value=base;
   }
 }
+/* Grouping + row filtering for the grid. "Group by" only matters across several
+   days: Day puts one section per date with every medication under it, Medication
+   keeps the older shape (one section per med, a row per date). "Only given"
+   hides rows with nothing logged — a dose time or a note both count. */
+function medGroupMode(){return (document.getElementById("logGroup")||{}).value||PREFS.medGroup||"day";}
+function medShowMode(){return (document.getElementById("logShow")||{}).value||PREFS.medShow||"all";}
+function hasLogged(date,medId){const e=getLogEntry(date,medId);return !!(e&&((e.times&&e.times.length)||(e.notes&&e.notes.trim())));}
+function medLabelHTML(m){return`<div class="grid-med">${esc(m.medication)}${m.prn?' <span class="pill prn" style="font-size:10px">PRN</span>':""}${m.active?"":' <span class="pill off" style="font-size:10px">Inactive</span>'}<div class="rt">${esc(m.dosage||"")}</div></div>`;}
+function dayLabelHTML(d){
+  const isToday=d===todayISO();
+  return`<div class="grid-daylab">${shortDate(d)}<span class="dw">${weekdayOf(d,"short")}${isToday?" · today":""}</span></div>`;
+}
+function weekdayOf(d,style){return new Date(...d.split("-").map((x,i)=>i===1?x-1:+x)).toLocaleDateString(undefined,{weekday:style});}
+function dayHeadRowHTML(d,n){
+  const isToday=d===todayISO();
+  return`<tr class="grp"><td class="stick">${shortDate(d)}${isToday?' <span class="pill" style="font-size:10px">today</span>':""}</td><td colspan="25" style="background:var(--surface-2);color:var(--muted);font-weight:500;font-size:11.5px">${weekdayOf(d,"long")} · ${fmtAmt(n)} dose${n===1?"":"s"} logged</td></tr>`;
+}
+function medHeadRowHTML(m){
+  return`<tr class="grp"><td class="stick">${esc(m.medication)}${m.prn?' <span class="pill prn" style="font-size:10px">PRN</span>':""}${m.active?"":' <span class="pill off" style="font-size:10px">Inactive</span>'}</td><td colspan="25" style="background:var(--surface-2);color:var(--muted);font-weight:500;font-size:11.5px">${esc(m.dosage||"")}${m.scheduled?" · scheduled "+esc(m.scheduled):""}</td></tr>`;
+}
+function gridNoteRowHTML(msg){
+  return`<tr><td class="stick" style="color:var(--muted);font-size:12px">—</td><td colspan="25" style="color:var(--muted);font-size:12px;padding:9px 12px">${esc(msg)}</td></tr>`;
+}
 function renderLogGrid(){
   syncRangeUI();
   const wrap=document.getElementById("logGridWrap");
@@ -3757,22 +3793,35 @@ function renderLogGrid(){
   const{dates,capped}=gridDates();
   if(!dates.length){wrap.innerHTML=`<div class="empty"><div class="ico">${ICO.pill}</div><h3>Pick a date range</h3><p>Choose a From and To date to see the log.</p></div>`;return;}
   const days=dates.length;
+  const group=days>1?medGroupMode():"day";
+  const onlyGiven=medShowMode()==="given";
+  const gw=document.getElementById("logGroupWrap");
+  if(gw)gw.style.display=days>1?"flex":"none";
   let body="";
   if(days===1){
     const date=dates[0];
-    body=shown.map((m,ri)=>gridRowHTML(m,date,`<div class="grid-med">${esc(m.medication)}${m.prn?' <span class="pill prn" style="font-size:10px">PRN</span>':""}${m.active?"":' <span class="pill off" style="font-size:10px">Inactive</span>'}<div class="rt">${esc(m.dosage||"")}</div></div>`,ri%2)).join("");
-  }else{
+    const rows=shown.filter(m=>!onlyGiven||hasLogged(date,m.id));
+    body=rows.length
+      ? rows.map((m,ri)=>gridRowHTML(m,date,medLabelHTML(m),ri%2)).join("")
+      : gridNoteRowHTML("Nothing logged yet for this day. Switch Rows to “All meds” to log a dose.");
+  }else if(group==="med"){
     body=shown.map(m=>{
-      const hdr=`<tr class="grp"><td class="stick">${esc(m.medication)}${m.prn?' <span class="pill prn" style="font-size:10px">PRN</span>':""}${m.active?"":' <span class="pill off" style="font-size:10px">Inactive</span>'}</td><td colspan="25" style="background:var(--surface-2);color:var(--muted);font-weight:500;font-size:11.5px">${esc(m.dosage||"")}${m.scheduled?" · scheduled "+esc(m.scheduled):""}</td></tr>`;
-      const rows=dates.map((d,ri)=>{
-        const isToday=d===todayISO();
-        const lab=`<div class="grid-daylab">${shortDate(d)}<span class="dw">${new Date(...d.split("-").map((x,i)=>i===1?x-1:+x)).toLocaleDateString(undefined,{weekday:"short"})}${isToday?" · today":""}</span></div>`;
-        return gridRowHTML(m,d,lab,ri%2);
-      }).join("");
-      return hdr+rows;
+      const ds=onlyGiven?dates.filter(d=>hasLogged(d,m.id)):dates;
+      if(!ds.length)return"";
+      return medHeadRowHTML(m)+ds.map((d,ri)=>gridRowHTML(m,d,dayLabelHTML(d),ri%2)).join("");
+    }).join("");
+    if(!body)body=gridNoteRowHTML("Nothing logged in this range for the medications selected.");
+  }else{
+    body=dates.map(d=>{
+      const rows=shown.filter(m=>!onlyGiven||hasLogged(d,m.id));
+      const n=shown.reduce((a,m)=>a+doseAmt(getLogEntry(d,m.id)),0);
+      const inner=rows.length
+        ? rows.map((m,ri)=>gridRowHTML(m,d,medLabelHTML(m),ri%2)).join("")
+        : gridNoteRowHTML("No doses logged");
+      return dayHeadRowHTML(d,n)+inner;
     }).join("");
   }
-  const headLabel=days===1?"Medication":"Day";
+  const headLabel=group==="med"?"Day":"Medication";
   const caption=days>1?`<div class="range-count">${shortDate(dates[0])} – ${shortDate(dates[days-1])} · ${days} days${capped?` · showing the first ${GRID_MAX_DAYS} days of a longer range`:""}</div>`:"";
   wrap.innerHTML=caption+`<div class="hr-note">Narrow screen — showing 6am–10pm. Widen to see all 24 hours.</div><table class="grid"><thead><tr><th class="stick">${headLabel}</th>${hourHeadHTML()}<th class="gridnote">Notes</th></tr></thead><tbody>${body}</tbody></table>`;
 }
@@ -3849,6 +3898,8 @@ document.getElementById("dayNext").onclick=()=>shiftDay(1);
 document.getElementById("dayToday").onclick=()=>{document.getElementById("logDate").value=todayISO();renderLogGrid();};
 document.getElementById("logDate").addEventListener("change",renderLogGrid);
 document.getElementById("logDays").addEventListener("change",async e=>{PREFS.medRange=e.target.value;await savePrefs();renderLogGrid();});
+document.getElementById("logGroup").addEventListener("change",async e=>{PREFS.medGroup=e.target.value;await savePrefs();renderLogGrid();});
+document.getElementById("logShow").addEventListener("change",async e=>{PREFS.medShow=e.target.value;await savePrefs();renderLogGrid();});
 ["gridFrom","gridTo"].forEach(id=>document.getElementById(id).addEventListener("change",renderLogGrid));
 
 
@@ -7189,7 +7240,7 @@ async function loadGlobalsFromStore(){
   if(Array.isArray(d)&&d.some(isSampleDaily)){d=d.filter(e=>!isSampleDaily(e));await storeSet(KEYS.daily,d);}
   DAILY=d;
   const p=await storeGet(KEYS.prefs);
-  if(p){PREFS={colvis:Object.assign({meds:{},daily:{},medlog:{}},p.colvis||{}),customCols:Array.isArray(p.customCols)?p.customCols:[],medCols:Array.isArray(p.medCols)?p.medCols:[],medlogCols:Array.isArray(p.medlogCols)?p.medlogCols:[],removedDaily:Array.isArray(p.removedDaily)?p.removedDaily:[],onceDaily:Array.isArray(p.onceDaily)?p.onceDaily:[],dailyOrder:Array.isArray(p.dailyOrder)?p.dailyOrder:[],nutriMode:["both","nutrition","fluids"].includes(p.nutriMode)?p.nutriMode:"both",nutriCols:Array.isArray(p.nutriCols)?p.nutriCols:[],feedCols:Array.isArray(p.feedCols)?p.feedCols:[],flushCols:Array.isArray(p.flushCols)?p.flushCols:[],feedsOn:!!p.feedsOn,flushGoal:Number(p.flushGoal)||0,flushGoals:(p.flushGoals&&typeof p.flushGoals==="object")?p.flushGoals:{},wideNotes:!!p.wideNotes,dailyView:["day","grid"].includes(p.dailyView)?p.dailyView:"grid",dailyRange:p.dailyRange||"7",entryRange:p.entryRange||"3",medRange:p.medRange||"1",doseRange:p.doseRange||"7",nutriRange:p.nutriRange||"7",feedRange:p.feedRange||"7",cardOrder:Array.isArray(p.cardOrder)?p.cardOrder:["meds","vitals","feeds","nutrition"],cardsOn:Object.assign({meds:true,vitals:true,feeds:true,nutrition:true},p.cardsOn||{}),quickNutri:Array.isArray(p.quickNutri)?p.quickNutri:["food","volume","calories","protein","sugar","fat"],quickFeed:Array.isArray(p.quickFeed)?p.quickFeed:["route","food","units","volume","rate","start","end"],regimens:Array.isArray(p.regimens)?p.regimens:[],activeRegimen:p.activeRegimen||null,treatmentOn:["on","off"].includes(p.treatmentOn)?p.treatmentOn:"auto",chartsOn:(p.chartsOn&&typeof p.chartsOn==="object")?p.chartsOn:{},patientSex:["f","m"].includes(p.patientSex)?p.patientSex:"",relPicked:Array.isArray(p.relPicked)?p.relPicked.filter(x=>x&&typeof x.id==="string"&&(x.kind==="line"||x.kind==="bar")):[],notif:mergeNotif(p.notif)};
+  if(p){PREFS={colvis:Object.assign({meds:{},daily:{},medlog:{}},p.colvis||{}),customCols:Array.isArray(p.customCols)?p.customCols:[],medCols:Array.isArray(p.medCols)?p.medCols:[],medlogCols:Array.isArray(p.medlogCols)?p.medlogCols:[],removedDaily:Array.isArray(p.removedDaily)?p.removedDaily:[],onceDaily:Array.isArray(p.onceDaily)?p.onceDaily:[],dailyOrder:Array.isArray(p.dailyOrder)?p.dailyOrder:[],nutriMode:["both","nutrition","fluids"].includes(p.nutriMode)?p.nutriMode:"both",nutriCols:Array.isArray(p.nutriCols)?p.nutriCols:[],feedCols:Array.isArray(p.feedCols)?p.feedCols:[],flushCols:Array.isArray(p.flushCols)?p.flushCols:[],feedsOn:!!p.feedsOn,flushGoal:Number(p.flushGoal)||0,flushGoals:(p.flushGoals&&typeof p.flushGoals==="object")?p.flushGoals:{},wideNotes:!!p.wideNotes,dailyView:["day","grid"].includes(p.dailyView)?p.dailyView:"grid",dailyRange:p.dailyRange||"7",entryRange:p.entryRange||"3",medRange:p.medRange||"1",medGroup:["day","med"].includes(p.medGroup)?p.medGroup:"day",medShow:["all","given"].includes(p.medShow)?p.medShow:"all",doseRange:p.doseRange||"7",nutriRange:p.nutriRange||"7",feedRange:p.feedRange||"7",cardOrder:Array.isArray(p.cardOrder)?p.cardOrder:["meds","vitals","feeds","nutrition"],cardsOn:Object.assign({meds:true,vitals:true,feeds:true,nutrition:true},p.cardsOn||{}),quickNutri:Array.isArray(p.quickNutri)?p.quickNutri:["food","volume","calories","protein","sugar","fat"],quickFeed:Array.isArray(p.quickFeed)?p.quickFeed:["route","food","units","volume","rate","start","end"],regimens:Array.isArray(p.regimens)?p.regimens:[],activeRegimen:p.activeRegimen||null,treatmentOn:["on","off"].includes(p.treatmentOn)?p.treatmentOn:"auto",chartsOn:(p.chartsOn&&typeof p.chartsOn==="object")?p.chartsOn:{},patientSex:["f","m"].includes(p.patientSex)?p.patientSex:"",relPicked:Array.isArray(p.relPicked)?p.relPicked.filter(x=>x&&typeof x.id==="string"&&(x.kind==="line"||x.kind==="bar")):[],notif:mergeNotif(p.notif)};
     PREFS.colvis.meds=PREFS.colvis.meds||{};PREFS.colvis.daily=PREFS.colvis.daily||{};PREFS.colvis.medlog=PREFS.colvis.medlog||{};}
   PREFS.colvis.nutrition=PREFS.colvis.nutrition||{};PREFS.colvis.feeds=PREFS.colvis.feeds||{};
   relPicked=(PREFS.relPicked||[]).slice();
@@ -8346,6 +8397,8 @@ function renderAll(){
   document.getElementById("feedsSection").style.display=PREFS.feedsOn?"block":"none";
   document.getElementById("panel-nutrition").classList.toggle("feeds-first",!!PREFS.feedsOn);
   document.getElementById("logDays").value=PREFS.medRange||"1";
+  document.getElementById("logGroup").value=PREFS.medGroup||"day";
+  document.getElementById("logShow").value=PREFS.medShow||"all";
   document.querySelectorAll("#dailyViewSeg button").forEach(b=>b.classList.toggle("active",b.dataset.dview===PREFS.dailyView));
   renderMeds();renderMedFilter();renderLogGrid();renderLogTable();renderDaily();renderNutrition();renderFeeds();renderHome();
 }
